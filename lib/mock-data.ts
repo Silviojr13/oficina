@@ -1753,3 +1753,20 @@ export const montadoras = [
   { nome: 'BMW', modelos: ['Série 1', 'Série 3', 'Série 5', 'X1', 'X3', 'X5', 'X6'] },
   { nome: 'Mercedes-Benz', modelos: ['Classe A', 'Classe C', 'Classe E', 'GLA', 'GLC', 'GLE'] }
 ];
+
+
+// Mock de Carrinho
+export const carrinhoMock: { produto: Produto, quantidade: number }[] = [
+  {
+    produto: produtos[0], // Filtro de Óleo
+    quantidade: 2
+  },
+  {
+    produto: produtos[1], // Pastilha de Freio
+    quantidade: 1
+  },
+  {
+    produto: produtos[3], // Vela de Ignição
+    quantidade: 4
+  }
+];

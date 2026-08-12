@@ -31,102 +31,39 @@ import { SiteFooter } from '@/components/site-footer'
 import { ProductCard } from '@/components/product-card'
 import { produtos, categorias, marcas } from '@/lib/mock-data'
 
-export default function ProdutosPage() {
-  const [search, setSearch] = useState('')
-  const [selectedCategoria, setSelectedCategoria] = useState<string>('')
-  const [selectedMarcas, setSelectedMarcas] = useState<string[]>([])
-  const [precoMin, setPrecoMin] = useState('')
-  const [precoMax, setPrecoMax] = useState('')
-  const [ordenacao, setOrdenacao] = useState('relevancia')
-  const [apenasPromocao, setApenasPromocao] = useState(false)
-  const [apenasEstoque, setApenasEstoque] = useState(true)
-
-  const produtosFiltrados = useMemo(() => {
-    let result = produtos.filter(p => p.exibirNoSite)
-
-    // Filtro de busca
-    if (search) {
-      const searchLower = search.toLowerCase()
-      result = result.filter(p => 
-        p.nome.toLowerCase().includes(searchLower) ||
-        p.sku.toLowerCase().includes(searchLower) ||
-        p.codigoOEM.toLowerCase().includes(searchLower) ||
-        p.marca.toLowerCase().includes(searchLower)
-      )
-    }
-
-    // Filtro de categoria
-    if (selectedCategoria) {
-      result = result.filter(p => p.categoria.toLowerCase() === selectedCategoria.toLowerCase())
-    }
-
-    // Filtro de marcas
-    if (selectedMarcas.length > 0) {
-      result = result.filter(p => selectedMarcas.includes(p.marca))
-    }
-
-    // Filtro de preço
-    if (precoMin) {
-      result = result.filter(p => (p.precoPromocional || p.precoSite) >= parseFloat(precoMin))
-    }
-    if (precoMax) {
-      result = result.filter(p => (p.precoPromocional || p.precoSite) <= parseFloat(precoMax))
-    }
-
-    // Filtro de promoção
-    if (apenasPromocao) {
-      result = result.filter(p => p.precoPromocional && p.precoPromocional < p.precoSite)
-    }
-
-    // Filtro de estoque
-    if (apenasEstoque) {
-      result = result.filter(p => p.estoqueAtual > 0)
-    }
-
-    // Ordenação
-    switch (ordenacao) {
-      case 'menor-preco':
-        result.sort((a, b) => (a.precoPromocional || a.precoSite) - (b.precoPromocional || b.precoSite))
-        break
-      case 'maior-preco':
-        result.sort((a, b) => (b.precoPromocional || b.precoSite) - (a.precoPromocional || a.precoSite))
-        break
-      case 'nome':
-        result.sort((a, b) => a.nome.localeCompare(b.nome))
-        break
-      default:
-        // Relevância: destaques primeiro
-        result.sort((a, b) => {
-          if (a.destaqueHome && !b.destaqueHome) return -1
-          if (!a.destaqueHome && b.destaqueHome) return 1
-          return 0
-        })
-    }
-
-    return result
-  }, [search, selectedCategoria, selectedMarcas, precoMin, precoMax, ordenacao, apenasPromocao, apenasEstoque])
-
-  const toggleMarca = (marca: string) => {
-    setSelectedMarcas(prev => 
-      prev.includes(marca) 
-        ? prev.filter(m => m !== marca)
-        : [...prev, marca]
-    )
-  }
-
-  const limparFiltros = () => {
-    setSearch('')
-    setSelectedCategoria('')
-    setSelectedMarcas([])
-    setPrecoMin('')
-    setPrecoMax('')
-    setApenasPromocao(false)
-    setApenasEstoque(true)
-  }
-
-  const temFiltrosAtivos = search || selectedCategoria || selectedMarcas.length > 0 || precoMin || precoMax || apenasPromocao
-
-  const FilterContent = () => (
+// Definição do componente FilterContent como um componente filho
+function FilterContent({ 
+  selectedCategoria, 
+  setSelectedCategoria, 
+  selectedMarcas, 
+  toggleMarca, 
+  precoMin, 
+  setPrecoMin, 
+  precoMax, 
+  setPrecoMax, 
+  apenasPromocao, 
+  setApenasPromocao, 
+  apenasEstoque, 
+  setApenasEstoque, 
+  limparFiltros, 
+  temFiltrosAtivos 
+}: {
+  selectedCategoria: string;
+  setSelectedCategoria: (value: string) => void;
+  selectedMarcas: string[];
+  toggleMarca: (marca: string) => void;
+  precoMin: string;
+  setPrecoMin: (value: string) => void;
+  precoMax: string;
+  setPrecoMax: (value: string) => void;
+  apenasPromocao: boolean;
+  setApenasPromocao: (value: boolean) => void;
+  apenasEstoque: boolean;
+  setApenasEstoque: (value: boolean) => void;
+  limparFiltros: () => void;
+  temFiltrosAtivos: boolean;
+}) {
+  return (
     <div className="space-y-6">
       {/* Categorias */}
       <Collapsible defaultOpen>
@@ -233,7 +170,104 @@ export default function ProdutosPage() {
         </Button>
       )}
     </div>
-  )
+  );
+}
+
+
+export default function ProdutosPage() {
+  const [search, setSearch] = useState('')
+  const [selectedCategoria, setSelectedCategoria] = useState<string>('')
+  const [selectedMarcas, setSelectedMarcas] = useState<string[]>([])
+  const [precoMin, setPrecoMin] = useState('')
+  const [precoMax, setPrecoMax] = useState('')
+  const [ordenacao, setOrdenacao] = useState('relevancia')
+  const [apenasPromocao, setApenasPromocao] = useState(false)
+  const [apenasEstoque, setApenasEstoque] = useState(true)
+
+  const produtosFiltrados = useMemo(() => {
+    let result = produtos.filter(p => p.exibirNoSite)
+
+    // Filtro de busca
+    if (search) {
+      const searchLower = search.toLowerCase()
+      result = result.filter(p => 
+        p.nome.toLowerCase().includes(searchLower) ||
+        p.sku.toLowerCase().includes(searchLower) ||
+        p.codigoOEM.toLowerCase().includes(searchLower) ||
+        p.marca.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Filtro de categoria
+    if (selectedCategoria) {
+      result = result.filter(p => p.categoria.toLowerCase() === selectedCategoria.toLowerCase())
+    }
+
+    // Filtro de marcas
+    if (selectedMarcas.length > 0) {
+      result = result.filter(p => selectedMarcas.includes(p.marca))
+    }
+
+    // Filtro de preço
+    if (precoMin) {
+      result = result.filter(p => (p.precoPromocional || p.precoSite) >= parseFloat(precoMin))
+    }
+    if (precoMax) {
+      result = result.filter(p => (p.precoPromocional || p.precoSite) <= parseFloat(precoMax))
+    }
+
+    // Filtro de promoção
+    if (apenasPromocao) {
+      result = result.filter(p => p.precoPromocional && p.precoPromocional < p.precoSite)
+    }
+
+    // Filtro de estoque
+    if (apenasEstoque) {
+      result = result.filter(p => p.estoqueAtual > 0)
+    }
+
+    // Ordenação
+    switch (ordenacao) {
+      case 'menor-preco':
+        result.sort((a, b) => (a.precoPromocional || a.precoSite) - (b.precoPromocional || b.precoSite))
+        break
+      case 'maior-preco':
+        result.sort((a, b) => (b.precoPromocional || b.precoSite) - (a.precoPromocional || a.precoSite))
+        break
+      case 'nome':
+        result.sort((a, b) => a.nome.localeCompare(b.nome))
+        break
+      default:
+        // Relevância: destaques primeiro
+        result.sort((a, b) => {
+          if (a.destaqueHome && !b.destaqueHome) return -1
+          if (!a.destaqueHome && b.destaqueHome) return 1
+          return 0
+        })
+    }
+
+    return result
+  }, [search, selectedCategoria, selectedMarcas, precoMin, precoMax, ordenacao, apenasPromocao, apenasEstoque])
+
+  const toggleMarca = (marca: string) => {
+    setSelectedMarcas(prev => 
+      prev.includes(marca) 
+        ? prev.filter(m => m !== marca)
+        : [...prev, marca]
+    )
+  }
+
+  const limparFiltros = () => {
+    setSearch('')
+    setSelectedCategoria('')
+    setSelectedMarcas([])
+    setPrecoMin('')
+    setPrecoMax('')
+    setApenasPromocao(false)
+    setApenasEstoque(true)
+  }
+
+  const temFiltrosAtivos = !!search || !!selectedCategoria || selectedMarcas.length > 0 || !!precoMin || !!precoMax || apenasPromocao
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -255,7 +289,22 @@ export default function ProdutosPage() {
             {/* Sidebar - Desktop */}
             <aside className="hidden lg:block w-64 flex-shrink-0">
               <div className="sticky top-24">
-                <FilterContent />
+                <FilterContent 
+                  selectedCategoria={selectedCategoria}
+                  setSelectedCategoria={setSelectedCategoria}
+                  selectedMarcas={selectedMarcas}
+                  toggleMarca={toggleMarca}
+                  precoMin={precoMin}
+                  setPrecoMin={setPrecoMin}
+                  precoMax={precoMax}
+                  setPrecoMax={setPrecoMax}
+                  apenasPromocao={apenasPromocao}
+                  setApenasPromocao={setApenasPromocao}
+                  apenasEstoque={apenasEstoque}
+                  setApenasEstoque={setApenasEstoque}
+                  limparFiltros={limparFiltros}
+                  temFiltrosAtivos={temFiltrosAtivos}
+                />
               </div>
             </aside>
 
@@ -295,7 +344,22 @@ export default function ProdutosPage() {
                         <SheetTitle>Filtros</SheetTitle>
                       </SheetHeader>
                       <div className="mt-6">
-                        <FilterContent />
+                        <FilterContent 
+                          selectedCategoria={selectedCategoria}
+                          setSelectedCategoria={setSelectedCategoria}
+                          selectedMarcas={selectedMarcas}
+                          toggleMarca={toggleMarca}
+                          precoMin={precoMin}
+                          setPrecoMin={setPrecoMin}
+                          precoMax={precoMax}
+                          setPrecoMax={setPrecoMax}
+                          apenasPromocao={apenasPromocao}
+                          setApenasPromocao={setApenasPromocao}
+                          apenasEstoque={apenasEstoque}
+                          setApenasEstoque={setApenasEstoque}
+                          limparFiltros={limparFiltros}
+                          temFiltrosAtivos={temFiltrosAtivos}
+                        />
                       </div>
                     </SheetContent>
                   </Sheet>

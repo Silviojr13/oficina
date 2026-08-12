@@ -381,8 +381,8 @@ export default function DashboardPage() {
                     <tr className="border-b border-border">
                       <th className="text-left py-2 text-sm font-medium text-muted-foreground">Produto</th>
                       <th className="text-left py-2 text-sm font-medium text-muted-foreground">SKU</th>
-                      <th className="text-center py-2 text-sm font-medium text-muted-foreground">Estoque</th>
-                      <th className="text-center py-2 text-sm font-medium text-muted-foreground">Mínimo</th>
+                      <th className="text-center py-2 text-sm font-medium text-muted-foreground">Estoque Atual</th>
+                      <th className="text-center py-2 text-sm font-medium text-muted-foreground">Estoque Mínimo</th>
                       <th className="text-right py-2 text-sm font-medium text-muted-foreground">Ação</th>
                     </tr>
                   </thead>
@@ -395,7 +395,9 @@ export default function DashboardPage() {
                         </td>
                         <td className="py-3 font-mono text-sm">{produto.sku}</td>
                         <td className="py-3 text-center">
-                          <Badge variant="destructive">{produto.estoqueAtual}</Badge>
+                          <span className={produto.estoqueAtual < produto.estoqueMinimo ? "text-destructive font-bold" : ""}>
+                            {produto.estoqueAtual}
+                          </span>
                         </td>
                         <td className="py-3 text-center text-sm text-muted-foreground">
                           {produto.estoqueMinimo}

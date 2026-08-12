@@ -5,9 +5,10 @@ import { ShoppingCart, Tag, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
-import { useCartStore } from '@/lib/store'
+// Removed useCartStore import as addItem is no longer used
 import type { Produto } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/components/ui/use-toast' // Importing useToast
 
 interface ProductCardProps {
   produto: Produto
@@ -15,7 +16,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ produto, className }: ProductCardProps) {
-  const addItem = useCartStore((state) => state.addItem)
+  // Removed const addItem = useCartStore((state) => state.addItem)
+  const { toast } = useToast(); // Using the toast hook
   
   const precoAtual = produto.precoPromocional || produto.precoSite
   const temPromocao = produto.precoPromocional && produto.precoPromocional < produto.precoSite
@@ -25,6 +27,39 @@ export function ProductCard({ produto, className }: ProductCardProps) {
 
   const emEstoque = produto.estoqueAtual > 0
   const estoqueBaixo = produto.estoqueAtual > 0 && produto.estoqueAtual <= produto.estoqueMinimo
+
+  // Defining the comprarProduto function
+  const comprarProduto = async (produtoId: string) => {
+    try {
+      const response = await fetch('/api/carrinho/adicionar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ produtoId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao adicionar produto ao carrinho.');
+      }
+
+      toast({
+        title: "Compra iniciada!",
+        description: `O produto ${produto.nome} foi adicionado ao carrinho.`,
+      });
+
+      // Optionally, update local cart state here if needed
+      // addItem(produto); // This would use the old store logic, might not be needed if API manages state
+
+    } catch (error) {
+      console.error("Erro ao comprar produto:", error); // Keeping console.error for error logging
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o produto ao carrinho. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Card className={cn("group overflow-hidden bg-card border-border hover:border-primary/50 transition-colors", className)}>
@@ -96,10 +131,10 @@ export function ProductCard({ produto, className }: ProductCardProps) {
           className="w-full gap-2" 
           size="sm"
           disabled={!emEstoque}
-          onClick={() => addItem(produto)}
+          onClick={() => comprarProduto(produto.id)} // Calling comprarProduto instead of addItem
         >
           <ShoppingCart className="h-4 w-4" />
-          {emEstoque ? 'Adicionar ao Carrinho' : 'Indisponível'}
+          {emEstoque ? 'Comprar' : 'Indisponível'} {/* Changed button text */}
         </Button>
       </CardFooter>
     </Card>
