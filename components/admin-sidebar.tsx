@@ -13,7 +13,9 @@ import {
   Wrench,
   ChevronLeft,
   Bell,
-  AlertTriangle
+  AlertTriangle,
+  Wallet,
+  Users
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -27,6 +29,8 @@ const navItems = [
   { href: '/admin/vendas', label: 'Vendas', icon: ShoppingCart },
   { href: '/admin/compras', label: 'Compras', icon: TrendingUp },
   { href: '/admin/fornecedores', label: 'Fornecedores', icon: Truck },
+  { href: '/admin/gastos', label: 'Gastos', icon: Wallet },
+  { href: '/admin/funcionarios', label: 'Funcionários', icon: Users },
   { href: '/admin/relatorios', label: 'Relatórios', icon: FileText },
 ]
 

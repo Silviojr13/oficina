@@ -1,4 +1,5 @@
-import type { Produto, Fornecedor, EntradaEstoque, SaidaEstoque, DashboardKPIs, MovimentacaoRecente } from './types';
+import type { Produto, Fornecedor, EntradaEstoque, SaidaEstoque, DashboardKPIs, MovimentacaoRecente, Gasto, Funcionario } from './types';
+
 
 // Fornecedores
 export const fornecedores: Fornecedor[] = [

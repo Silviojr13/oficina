@@ -221,3 +221,36 @@ export interface Cart {
   desconto: number;
   total: number;
 }
+
+export interface Gasto {
+  id: string;
+  descricao: string;
+  categoria: 'aluguel' | 'salarios' | 'fornecedores' | 'energia' | 'agua' | 'internet' | 'manutencao' | 'marketing' | 'impostos' | 'transporte' | 'outros';
+  valor: number;
+  dataVencimento: string;
+  dataPagamento: string | null;
+  formaPagamento: string;
+  status: 'pago' | 'pendente' | 'atrasado';
+  recorrente: boolean;
+  observacoes: string;
+  createdAt: string;
+}
+
+export interface Funcionario {
+  id: string;
+  nome: string;
+  cpf: string;
+  cargo: string;
+  setor: string;
+  telefone: string;
+  email: string;
+  dataAdmissao: string;
+  dataDemissao: string | null;
+  salario: number;
+  comissaoPercentual: number;
+  tipoContrato: 'clt' | 'pj' | 'estagio' | 'temporario';
+  status: 'ativo' | 'ferias' | 'afastado' | 'inativo';
+  endereco: string;
+  observacoes: string;
+  createdAt: string;
+}

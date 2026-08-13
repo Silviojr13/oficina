@@ -44,10 +44,16 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'AutoPeças Pro',
+  },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#ffffff',
+  themeColor: '#0a0a0a', // Updated to match the dark theme
   width: 'device-width',
   initialScale: 1,
 }
