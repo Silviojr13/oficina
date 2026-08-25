@@ -1,0 +1,175 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import prisma from '../prisma';
+
+export async function getSaidaEstoque(id: string) {
+  try {
+    const venda = await prisma.saidaEstoque.findUnique({
+      where: { id },
+      include: {
+        itens: {
+          include: {
+            produto: true, // Include product info for each item
+          }
+        }
+      },
+    });
+
+    if (!venda) {
+      return null;
+    }
+
+    // Parse JSON fields
+    return {
+      ...venda,
+      formasPagamento: venda.formasPagamento ? JSON.parse(venda.formasPagamento as string) : [],
+      // itens are already included with produto relation
+    };
+  } catch (error) {
+    console.error('Erro ao buscar venda:', error);
+    return null;
+  }
+}
+
+export async function getSaidasEstoque(page: number = 1, limit: number = 10, search?: string) {
+  try {
+    const skip = (page - 1) * limit;
+
+    let whereClause: any = {};
+    if (search) {
+      // Search by client name or numberPedido
+      whereClause.OR = [
+        { cliente: { contains: search, mode: 'insensitive' } },
+        { numeroPedido: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const vendas = await prisma.saidaEstoque.findMany({
+      where: whereClause,
+      skip,
+      take: limit,
+      orderBy: { dataHora: 'desc' }, // Order by date/time of sale
+      include: {
+        itens: {
+          include: {
+            produto: true, // Include product info for each item
+          }
+        }
+      },
+    });
+
+    const total = await prisma.saidaEstoque.count({
+      where: whereClause,
+    });
+
+    // Parse JSON fields for each venda
+    const parsedVendas = vendas.map(venda => ({
+      ...venda,
+      formasPagamento: venda.formasPagamento ? JSON.parse(venda.formasPagamento as string) : [],
+    }));
+
+    return {
+      data: parsedVendas,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    console.error('Erro ao buscar vendas:', error);
+    return { data: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } };
+  }
+}
+
+// Note: Creating/updating/deleting sales might involve more complex logic (stock adjustment, etc.)
+// For now, implementing basic CRUD. More complex logic would be needed in a real application.
+export async function createSaidaEstoque(data: any) {
+  try {
+    const vendaData = {
+      ...data,
+      formasPagamento: data.formasPagamento ? JSON.stringify(data.formasPagamento) : null,
+      itens: {
+        create: data.itens,
+      },
+    };
+
+    const venda = await prisma.saidaEstoque.create({
+      data: vendaData,
+      include: {
+        itens: {
+          include: {
+            produto: true,
+          }
+        }
+      },
+    });
+
+    revalidatePath('/admin/vendas');
+    revalidatePath('/admin/vendas/nova');
+
+    return { success: true, data: venda };
+  } catch (error) {
+    console.error('Erro ao criar venda:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
+  }
+}
+
+export async function updateSaidaEstoque(id: string, data: any) {
+  try {
+    const vendaData = {
+      ...data,
+      formasPagamento: data.formasPagamento ? JSON.stringify(data.formasPagamento) : null,
+      itens: {
+        deleteMany: {}, // Delete old items
+        create: data.itens, // Create new items
+      },
+    };
+
+    const venda = await prisma.saidaEstoque.update({
+      where: { id },
+      data: vendaData,
+      include: {
+        itens: {
+          include: {
+            produto: true,
+          }
+        }
+      },
+    });
+
+    revalidatePath(`/admin/vendas/${id}`);
+    revalidatePath('/admin/vendas');
+
+    return { success: true, data: venda };
+  } catch (error) {
+    console.error('Erro ao atualizar venda:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
+  }
+}
+
+export async function deleteSaidaEstoque(id: string) {
+  try {
+    await prisma.saidaEstoque.delete({
+      where: { id },
+    });
+
+    revalidatePath('/admin/vendas');
+
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao deletar venda:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
+  }
+}
+
+// Action to mark a sale as paid (might be applicable depending on business logic)
+// For simplicity, assuming status change logic could be here if needed.
+// Many sales systems consider 'completed' or 'paid' upon creation if payment is immediate.
+// This is a placeholder if such state management is required.
+// export async function marcarVendaComoPaga(id: string) {
+//   // Implementation would depend on specific status field and logic
+//   // Example: update status in SaidaEstoque
+// }

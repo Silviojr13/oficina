@@ -1771,3 +1771,120 @@ export const carrinhoMock: { produto: Produto, quantidade: number }[] = [
     quantidade: 4
   }
 ];
+
+
+// Mock de Vendas (SaidaEstoque)
+export const vendasMock: SaidaEstoque[] = [
+  {
+    id: 'v1',
+    tipoSaida: 'venda_balcao',
+    numeroPedido: '1254',
+    dataHora: '2024-04-10T14:30:00',
+    cliente: 'José Silva',
+    cpfCnpjCliente: '123.456.789-00',
+    vendedor: 'Maria Oliveira',
+    itens: [
+      {
+        id: 'iv1_1',
+        produtoId: 'p1',
+        quantidade: 2,
+        unidade: 'UN',
+        valorUnitario: 269.80,
+        desconto: 0,
+        ipi: 0,
+        icms: 0,
+        valorTotal: 539.60
+      },
+      {
+        id: 'iv1_2',
+        produtoId: 'p5',
+        quantidade: 2,
+        unidade: 'UN',
+        valorUnitario: 159.95,
+        desconto: 0,
+        ipi: 0,
+        icms: 0,
+        valorTotal: 319.90
+      }
+    ],
+    subtotal: 859.50,
+    descontoTotal: 0,
+    valorFinal: 859.50,
+    formasPagamento: ['Dinheiro'],
+    troco: 40.50,
+    observacoes: '',
+    emitirNFe: false,
+    imprimirCupom: true,
+    createdAt: '2024-04-10T14:30:00'
+  }
+];
+
+// Mock de Gastos
+export const gastosMock: Gasto[] = [
+  {
+    id: 'g1',
+    descricao: 'Aluguel Loja Abril',
+    categoria: 'aluguel',
+    valor: 3500.00,
+    dataVencimento: '2024-04-10',
+    dataPagamento: '2024-04-10',
+    formaPagamento: 'TED',
+    status: 'pago',
+    recorrente: true,
+    observacoes: 'Taxa de condomínio incluída.',
+    createdAt: '2024-04-01'
+  },
+  {
+    id: 'g2',
+    descricao: 'Salário Maria Oliveira',
+    categoria: 'salarios',
+    valor: 3200.00,
+    dataVencimento: '2024-04-05',
+    dataPagamento: '2024-04-05',
+    formaPagamento: 'TED',
+    status: 'pago',
+    recorrente: true,
+    observacoes: '',
+    createdAt: '2024-04-05'
+  }
+];
+
+// Mock de Funcionários
+export const funcionariosMock: Funcionario[] = [
+  {
+    id: 'f1',
+    nome: 'Maria Oliveira',
+    cpf: '123.456.789-00',
+    cargo: 'Vendedora',
+    setor: 'Vendas',
+    telefone: '(11) 98765-4321',
+    email: 'maria.oliveira@empresa.com',
+    dataAdmissao: '2023-06-15',
+    dataDemissao: null,
+    salario: 3200.00,
+    comissaoPercentual: 2.5,
+    tipoContrato: 'clt',
+    status: 'ativo',
+    endereco: 'Rua dos Funcionários, 123, Apt 45, Centro, São Paulo, SP, 01001-000',
+    observacoes: 'Excelente vendedora.',
+    createdAt: '2023-06-15'
+  },
+  {
+    id: 'f2',
+    nome: 'Carlos Santos',
+    cpf: '987.654.321-00',
+    cargo: 'Gerente',
+    setor: 'Administração',
+    telefone: '(11) 91234-5678',
+    email: 'carlos.santos@empresa.com',
+    dataAdmissao: '2022-03-20',
+    dataDemissao: null,
+    salario: 5500.00,
+    comissaoPercentual: 5,
+    tipoContrato: 'clt',
+    status: 'ativo',
+    endereco: 'Av. Paulista, 1000, Conj 101, Bela Vista, São Paulo, SP, 01310-100',
+    observacoes: 'Responsável pela equipe.',
+    createdAt: '2022-03-20'
+  }
+];

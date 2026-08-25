@@ -14,10 +14,17 @@ export default function SalesListPage() {
 
   // Calculating KPIs
   const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
   const vendasHoje = vendas.filter(v => v.dataHora.startsWith(today));
   const totalVendasHoje = vendasHoje.reduce((sum, v) => sum + v.valorFinal, 0);
-  const totalVendasMes = vendas.reduce((sum, v) => sum + v.valorFinal, 0);
-  const ticketMedio = vendas.length > 0 ? totalVendasMes / vendas.length : 0;
+  
+  // Filtrar vendas do mês atual
+  const vendasMes = vendas.filter(v => {
+    const d = new Date(v.dataHora);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const totalVendasMes = vendasMes.reduce((sum, v) => sum + v.valorFinal, 0);
+  const ticketMedio = vendasMes.length > 0 ? totalVendasMes / vendasMes.length : 0;
 
   return (
     <div className="space-y-6">

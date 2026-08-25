@@ -26,6 +26,25 @@ export default function ProductListPage() {
     }
   };
 
+  const categorias = [
+    { id: 1, nome: 'Motor' },
+    { id: 2, nome: 'Freios' },
+    { id: 3, nome: 'Suspensão' },
+    { id: 4, nome: 'Transmissão' },
+    { id: 5, nome: 'Elétrica' },
+    { id: 6, nome: 'Filtros' },
+    { id: 7, nome: 'Correia e Corrente' },
+    { id: 8, nome: 'Arrefecimento' },
+    { id: 9, nome: 'Combustível' },
+    { id: 10, nome: 'Escapamento' },
+    { id: 11, nome: 'Carroceria' },
+    { id: 12, nome: 'Acessórios' },
+    { id: 13, nome: 'Embreagem' },
+    { id: 14, nome: 'Direção' },
+    { id: 15, nome: 'Iluminação' },
+    { id: 16, nome: 'Lubrificantes' },
+  ];
+
   const filteredProducts = produtos.filter(p => {
     const matchesSearch = p.nome.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategoria = !selectedCategoria || p.categoria === selectedCategoria;
@@ -51,22 +70,9 @@ export default function ProductListPage() {
             <SelectValue placeholder="Filtrar por categoria" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="motor">Motor</SelectItem>
-            <SelectItem value="freios">Freios</SelectItem>
-            <SelectItem value="suspensao">Suspensão</SelectItem>
-            <SelectItem value="transmissao">Transmissão</SelectItem>
-            <SelectItem value="eletrica">Elétrica</SelectItem>
-            <SelectItem value="filtros">Filtros</SelectItem>
-            <SelectItem value="correia">Correia e Corrente</SelectItem>
-            <SelectItem value="arrefecimento">Arrefecimento</SelectItem>
-            <SelectItem value="combustivel">Combustível</SelectItem>
-            <SelectItem value="escapamento">Escapamento</SelectItem>
-            <SelectItem value="carroceria">Carroceria</SelectItem>
-            <SelectItem value="acessorios">Acessórios</SelectItem>
-            <SelectItem value="embreagem">Embreagem</SelectItem>
-            <SelectItem value="direcao">Direção</SelectItem>
-            <SelectItem value="iluminacao">Iluminação</SelectItem>
-            <SelectItem value="lubrificantes">Lubrificantes</SelectItem>
+            {categorias.map(c => (
+              <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Button onClick={() => router.push('/admin/produtos/novo')}>

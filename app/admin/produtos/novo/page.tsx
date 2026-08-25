@@ -1,30 +1,33 @@
 'use client';
 
 import { AdminHeader } from '@/components/admin-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useProdutoStore } from '@/lib/admin-store';
-import ProductForm from '@/components/admin/product-form'; // Assuming the component is created
 import { Produto } from '@/lib/types';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner'; // CORRECTION: Changed from 'react-hot-toast' to 'sonner'
+import ProductForm from '@/components/admin/product-form';
 
 export default function NewProductPage() {
+  const router = useRouter();
   const { addProduto } = useProdutoStore();
 
-  const handleSubmit = (data: Omit<Produto, 'id' | 'createdAt' | 'updatedAt' | 'custoTotal'>) => {
-    addProduto(data);
-    // Redirect logic can be added here if needed
+  const handleSubmit = async (data: Partial<Produto>) => {
+    const { id, createdAt, updatedAt, custoTotal, ...storeData } = data;
+    // Explicitly cast storeData to the expected type for the store.
+    // We rely on Zod validation to ensure required fields are present in `data`.
+    await addProduto(storeData as Omit<Produto, 'id' | 'createdAt' | 'updatedAt' | 'custoTotal'>);
+    router.push('/admin/produtos');
+    toast.success('Produto criado com sucesso!');
   };
 
   return (
     <div className="space-y-6">
-      <AdminHeader title="Novo Produto" subtitle="Cadastrar um novo item no catálogo" />
-      <Card>
-        <CardHeader>
-          <CardTitle>Dados do Produto</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProductForm onSubmit={handleSubmit} isEditing={false} />
-        </CardContent>
-      </Card>
+      <AdminHeader title="Novo Produto" subtitle="Adicione um novo produto ao catálogo" />
+      <ProductForm
+        onSubmit={handleSubmit}
+        isEditing={false}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useGastoStore } from '@/lib/admin-store';
+import { Gasto } from '@/lib/types'; // Added import for Gasto type
 import { useState } from 'react';
 import { Plus, CheckCircle, Edit, Trash2 } from 'lucide-react';
 
@@ -24,12 +25,6 @@ const categoriaLabels: Record<string, string> = {
   outros: 'Outros',
 };
 
-const statusColors: Record<string, string> = {
-  pago: 'success',
-  pendente: 'secondary',
-  atrasado: 'destructive',
-};
-
 export default function ExpensesPage() {
   const { gastos, marcarComoPago, deleteGasto } = useGastoStore();
   const [open, setOpen] = useState(false);
@@ -46,6 +41,13 @@ export default function ExpensesPage() {
   const totalAtrasado = gastos
     .filter(g => g.status === 'atrasado' || (g.status === 'pendente' && new Date(g.dataVencimento) < new Date()))
     .reduce((sum, g) => sum + g.valor, 0);
+
+  // Defina os tipos explicitamente para evitar erros
+  const statusColors: Record<Gasto['status'], 'default' | 'destructive' | 'outline' | 'secondary'> = {
+    pago: 'default',      // Usando 'default' para 'pago', pois 'success' não existe
+    pendente: 'secondary',
+    atrasado: 'destructive',
+  };
 
   return (
     <div className="space-y-6">

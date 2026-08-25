@@ -120,7 +120,7 @@ export interface Fornecedor {
     banco: string;
     agencia: string;
     conta: string;
-    tipoConta: string;
+    tipoConta: 'Corrente' | 'Poupança';
   };
   condicaoPagamentoPadrao: string;
   prazoEntrega: number;

@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Produto {
+  id                     String                     @id @default(cuid())
+  nome                   String
+  slug                   String                     @unique
+  sku                    String                     @unique
+  codigoOEM              String?
+  codigoBarras           String?
+  ncm                    String?
+  cest                   String?
+  referenciaCruzada      String?
+  marca                  String
+  fabricanteOriginal     String?
+  paisOrigem             String?
+  tipoAplicacao          String
+  tipoPeca               String
+  categoria              String
+  subcategoria           String?
+  tags                   String?
+  localizacaoEstoque     String?
+  setorAlmoxarifado      String?
+  pesoBruto              Float?
+  pesoLiquido            Float?
+  comprimento            Float?
+  largura                Float?
+  altura                 Float?
+  unidadeMedida          String?
+  conteudoEmbalagem      Int?
+  material               String?
+  cor                    String?
+  garantia               String?
+  fichaTecnicaUrl        String?
+  manualUrl              String?
+  custoAquisicao         Float?
+  freteEntrada           Float?
+  impostosEntrada        Float?
+  custoTotal             Float                      @default(0)
+  margemLucro            Float?
+  precoVendaSugerido     Float?
+  precoVendaBalcao       Float?
+  precoB2B               Float?
+  precoMinimo            Float?
+  descontoMaximo         Float?
+  precoSite              Float?
+  precoPromocional       Float?
+  dataInicioPromocao     DateTime?
+  dataFimPromocao        DateTime?
+  exibirNoSite           Boolean                    @default(false)
+  destaqueHome           Boolean                    @default(false)
+  aliquotaICMS           Float?
+  aliquotaIPI            Float?
+  cstCsosn               String?
+  pisCofins              Float?
+  regimeTributacao       String?
+  estoqueAtual           Int                        @default(0)
+  estoqueMinimo          Int?
+  estoqueMaximo          Int?
+  estoqueSeguranca       Int?
+  controlaEstoque        Boolean                    @default(true)
+  permiteVendaSemEstoque Boolean                    @default(false)
+  fornecedorPadraoId     String?
+  prazoReposicao         Int?
+  fotos                  String?
+  imagemPrincipal        String?
+  descricaoCurta         String?
+  descricaoCompleta      String?
+  caracteristicas        String?
+  videoUrl               String?
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+  entradasEstoque        ItemMovimentacao_entrada[]
+  saidasEstoque          ItemMovimentacao_saida[]
+  veiculosCompativeis    VeiculoCompativel[]
+
+  @@index([categoria])
+}
+
+model VeiculoCompativel {
+  id          String  @id @default(cuid())
+  produtoId   String
+  montadora   String
+  modelo      String
+  versaoMotor String
+  anoInicial  Int
+  anoFinal    Int?
+  posicao     String
+  observacao  String?
+  produto     Produto @relation(fields: [produtoId], references: [id])
+
+  @@index([produtoId])
+}
+
+model Fornecedor {
+  id                      String           @id @default(cuid())
+  razaoSocial             String
+  nomeFantasia            String
+  cnpj                    String           @unique
+  inscricaoEstadual       String?
+  contato                 String?
+  telefone                String?
+  email                   String?
+  enderecoLogradouro      String
+  enderecoNumero          String
+  enderecoComplemento     String?
+  enderecoBairro          String
+  enderecoCidade          String
+  enderecoEstado          String
+  enderecoCep             String
+  dadosBancariosBanco     String
+  dadosBancariosAgencia   String
+  dadosBancariosConta     String
+  dadosBancariosTipoConta String
+  condicaoPagamentoPadrao String?
+  prazoEntrega            Int?
+  avaliacao               Int?
+  observacoes             String?
+  createdAt               DateTime         @default(now())
+  entradasEstoque         EntradaEstoque[]
+}
+
+model Gasto {
+  id             String    @id @default(cuid())
+  descricao      String
+  categoria      String
+  valor          Float
+  dataVencimento DateTime
+  dataPagamento  DateTime?
+  formaPagamento String?
+  status         String    @default("pendente")
+  recorrente     Boolean   @default(false)
+  observacoes    String?
+  createdAt      DateTime  @default(now())
+
+  @@map("gastos")
+}
+
+model Funcionario {
+  id                 String    @id @default(cuid())
+  nome               String
+  cpf                String    @unique
+  cargo              String
+  setor              String
+  telefone           String?
+  email              String?
+  dataAdmissao       DateTime
+  dataDemissao       DateTime?
+  salario            Float?
+  comissaoPercentual Float?    @default(0)
+  tipoContrato       String
+  status             String    @default("ativo")
+  endereco           String?
+  observacoes        String?
+  createdAt          DateTime  @default(now())
+}
+
+model SaidaEstoque {
+  id              String                   @id @default(cuid())
+  tipoSaida       String
+  numeroPedido    String?
+  dataHora        DateTime
+  cliente         String?
+  cpfCnpjCliente  String?
+  vendedor        String?
+  subtotal        Float?
+  descontoTotal   Float?
+  valorFinal      Float?
+  formasPagamento String?
+  troco           Float?
+  observacoes     String?
+  emitirNFe       Boolean?
+  imprimirCupom   Boolean?
+  createdAt       DateTime                 @default(now())
+  itens           ItemMovimentacao_saida[]
+}
+
+model EntradaEstoque {
+  id                String                     @id @default(cuid())
+  numeroNF          String
+  chaveAcesso       String                     @unique
+  dataEmissao       DateTime
+  dataEntrada       DateTime
+  fornecedorId      String
+  cnpjFornecedor    String
+  tipoEntrada       String
+  condicaoPagamento String?
+  dataVencimento    DateTime?
+  formaPagamento    String?
+  subtotalProdutos  Float?
+  totalDescontos    Float?
+  totalFrete        Float?
+  totalIPI          Float?
+  totalICMSST       Float?
+  outrasDespesas    Float?
+  valorTotal        Float?
+  observacoes       String?
+  anexoUrl          String?
+  createdAt         DateTime                   @default(now())
+  fornecedor        Fornecedor                 @relation(fields: [fornecedorId], references: [id])
+  itens             ItemMovimentacao_entrada[]
+}
+
+model ItemMovimentacao_saida {
+  id            String       @id @default(cuid())
+  produtoId     String
+  saidaId       String
+  quantidade    Int
+  unidade       String?
+  valorUnitario Float
+  desconto      Float?
+  ipi           Float?
+  icms          Float?
+  valorTotal    Float
+  saida         SaidaEstoque @relation(fields: [saidaId], references: [id], onDelete: Cascade)
+  produto       Produto      @relation(fields: [produtoId], references: [id])
+
+  @@index([produtoId])
+  @@index([saidaId])
+}
+
+model ItemMovimentacao_entrada {
+  id            String         @id @default(cuid())
+  produtoId     String
+  entradaId     String
+  quantidade    Int
+  unidade       String?
+  valorUnitario Float
+  desconto      Float?
+  ipi           Float?
+  icms          Float?
+  valorTotal    Float
+  entrada       EntradaEstoque @relation(fields: [entradaId], references: [id], onDelete: Cascade)
+  produto       Produto        @relation(fields: [produtoId], references: [id])
+
+  @@index([produtoId])
+  @@index([entradaId])
+}

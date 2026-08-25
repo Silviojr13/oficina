@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useFuncionarioStore } from '@/lib/admin-store';
+import { Funcionario } from '@/lib/types';
 import { useState } from 'react';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
@@ -23,13 +24,6 @@ const statusLabels: Record<string, string> = {
   inativo: 'Inativo',
 };
 
-const statusColors: Record<string, string> = {
-  ativo: 'default',
-  ferias: 'secondary',
-  afastado: 'destructive',
-  inativo: 'outline',
-};
-
 export default function EmployeesPage() {
   const { funcionarios, deleteFuncionario } = useFuncionarioStore();
   const [open, setOpen] = useState(false);
@@ -40,6 +34,14 @@ export default function EmployeesPage() {
     .filter(f => f.status === 'ativo')
     .reduce((sum, f) => sum + f.salario, 0);
   const totalFeriasAfastados = funcionarios.filter(f => f.status === 'ferias' || f.status === 'afastado').length;
+
+  // Defina os tipos explicitamente para evitar erros
+  const statusColors: Record<Funcionario['status'], 'default' | 'destructive' | 'outline' | 'secondary'> = {
+    ativo: 'default',
+    ferias: 'secondary',
+    afastado: 'destructive',
+    inativo: 'outline',
+  };
 
   return (
     <div className="space-y-6">
