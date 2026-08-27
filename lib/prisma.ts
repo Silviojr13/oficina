@@ -9,22 +9,16 @@ declare global {
 
 let prisma: PrismaClient;
 
-// Attempt to pass config object directly (works with current setup)
-const adapterConfig = {
-  url: process.env.DATABASE_URL!, // This is the local dev DB
-};
-const adapter = new PrismaLibSql(adapterConfig);
-
 if (process.env.NODE_ENV === 'production') {
-  const prodAdapterConfig = {
+  const adapter = new PrismaLibSql({
     url: process.env.TURSO_DATABASE_URL!,
     authToken: process.env.TURSO_AUTH_TOKEN!,
-  };
-  const prodAdapter = new PrismaLibSql(prodAdapterConfig);
-  prisma = new PrismaClient({ adapter: prodAdapter });
+  });
+  prisma = new PrismaClient({ adapter });
 } else {
-  // Use a global variable in development
+  // Use a global variable in development to avoid recreating the client on every hot reload
   if (!global.prisma) {
+    const adapter = new PrismaLibSql({ url: process.env.DATABASE_URL! });
     global.prisma = new PrismaClient({ adapter });
   }
   prisma = global.prisma;

@@ -2,35 +2,39 @@
 
 import { AdminHeader } from '@/components/admin-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useParams } from 'next/navigation';
-import { useProdutoStore } from '@/lib/admin-store';
+import { useParams, useRouter } from 'next/navigation';
+import { getProduto, updateProduto } from '@/lib/actions/produtos';
 import { useEffect, useState } from 'react';
 import { Produto } from '@/lib/types';
-import ProductForm from '@/components/admin/product-form'; // Assuming the component is created
+import { toast } from 'sonner';
+import ProductForm from '@/components/admin/product-form';
 
 export default function EditProductPage() {
   const { id } = useParams<{ id: string }>();
-  const { produtos, updateProduto } = useProdutoStore();
+  const router = useRouter();
   const [initialData, setInitialData] = useState<Partial<Produto> | null>(null);
 
   useEffect(() => {
     if (id) {
-      const produto = produtos.find(p => p.id === id);
-      if (produto) {
-        setInitialData(produto);
-      }
+      getProduto(id).then((produto) => {
+        if (produto) setInitialData(produto as unknown as Partial<Produto>);
+      });
     }
-  }, [id, produtos]);
+  }, [id]);
 
   if (!initialData) {
     return <div>Carregando...</div>; // Or a loading spinner
   }
 
-  const handleSubmit = (data: Partial<Produto>) => {
-    if (id) {
-      updateProduto(id, data);
-      // Redirect logic can be added here if needed
+  const handleSubmit = async (data: Partial<Produto>) => {
+    if (!id) return;
+    const resultado = await updateProduto(id, data);
+    if (!resultado.success) {
+      toast.error(`Erro ao atualizar produto: ${resultado.error}`);
+      return;
     }
+    toast.success('Produto atualizado com sucesso!');
+    router.push('/admin/produtos');
   };
 
   return (

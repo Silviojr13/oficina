@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
+import { criarAnuncioMercadoLivre } from '../mercado-livre';
 
 export async function getProduto(id: string) {
   try {
@@ -100,6 +101,10 @@ export async function createProduto(data: any) {
       },
     });
 
+    sincronizarComMercadoLivre(produto.id).catch((error) => {
+      console.error('Erro ao sincronizar produto com Mercado Livre:', error);
+    });
+
     revalidatePath('/admin/produtos');
     revalidatePath('/admin/produtos/novo');
 
@@ -108,6 +113,39 @@ export async function createProduto(data: any) {
     console.error('Erro ao criar produto:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
   }
+}
+
+// Publica o produto no Mercado Livre em segundo plano. Falhas aqui nunca devem
+// impedir o cadastro do produto - o resultado fica registrado nos campos
+// mercadoLivre* do produto para o usuário conferir/tentar de novo depois.
+async function sincronizarComMercadoLivre(produtoId: string) {
+  const produto = await prisma.produto.findUnique({ where: { id: produtoId } });
+  if (!produto) return;
+
+  const resultado = await criarAnuncioMercadoLivre(produto);
+
+  await prisma.produto.update({
+    where: { id: produtoId },
+    data: resultado.success
+      ? {
+          mercadoLivreId: resultado.mercadoLivreId,
+          mercadoLivreStatus: 'sincronizado',
+          mercadoLivreErro: null,
+          mercadoLivreSyncEm: new Date(),
+        }
+      : {
+          mercadoLivreStatus: 'erro',
+          mercadoLivreErro: resultado.error,
+          mercadoLivreSyncEm: new Date(),
+        },
+  });
+
+  revalidatePath('/admin/produtos');
+}
+
+export async function reenviarParaMercadoLivre(produtoId: string) {
+  await sincronizarComMercadoLivre(produtoId);
+  revalidatePath('/admin/produtos');
 }
 
 export async function updateProduto(id: string, data: any) {

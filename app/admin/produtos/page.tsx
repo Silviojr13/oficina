@@ -7,21 +7,36 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { useProdutoStore } from '@/lib/admin-store';
+import { getProdutos, deleteProduto } from '@/lib/actions/produtos';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ProductListPage() {
   const router = useRouter();
-  const { produtos, deleteProduto } = useProdutoStore();
+  const [produtos, setProdutos] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState('');
   const [produtoToDelete, setProdutoToDelete] = useState<string | null>(null);
 
-  const handleDeleteConfirm = () => {
+  const carregarProdutos = async () => {
+    const resultado = await getProdutos(1, 1000);
+    setProdutos(resultado.data);
+  };
+
+  useEffect(() => {
+    carregarProdutos();
+  }, []);
+
+  const handleDeleteConfirm = async () => {
     if (produtoToDelete) {
-      deleteProduto(produtoToDelete);
+      const resultado = await deleteProduto(produtoToDelete);
+      if (!resultado.success) {
+        toast.error(`Erro ao excluir produto: ${resultado.error}`);
+      } else {
+        await carregarProdutos();
+      }
       setProdutoToDelete(null);
     }
   };
@@ -97,6 +112,7 @@ export default function ProductListPage() {
                   <th className="py-2 text-left">Preço Site</th>
                   <th className="py-2 text-left">Estoque</th>
                   <th className="py-2 text-left">Status</th>
+                  <th className="py-2 text-left">Mercado Livre</th>
                   <th className="py-2 text-left">Ações</th>
                 </tr>
               </thead>
@@ -120,6 +136,13 @@ export default function ProductListPage() {
                       ) : (
                         <Badge variant="secondary">Inativo</Badge>
                       )}
+                    </td>
+                    <td className="py-2">
+                      {produto.mercadoLivreStatus === 'sincronizado' && <Badge variant="default">Publicado</Badge>}
+                      {produto.mercadoLivreStatus === 'erro' && (
+                        <Badge variant="destructive" title={produto.mercadoLivreErro ?? ''}>Erro</Badge>
+                      )}
+                      {!produto.mercadoLivreStatus && <Badge variant="outline">Não enviado</Badge>}
                     </td>
                     <td className="py-2 flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => router.push(`/admin/produtos/${produto.id}/editar`)}>

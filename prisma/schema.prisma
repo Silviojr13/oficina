@@ -75,11 +75,25 @@ model Produto {
   videoUrl               String?
   createdAt              DateTime                   @default(now())
   updatedAt              DateTime                   @updatedAt
+  mercadoLivreId         String?
+  mercadoLivreStatus     String?
+  mercadoLivreErro       String?
+  mercadoLivreSyncEm     DateTime?
   entradasEstoque        ItemMovimentacao_entrada[]
   saidasEstoque          ItemMovimentacao_saida[]
   veiculosCompativeis    VeiculoCompativel[]
 
   @@index([categoria])
+}
+
+model MercadoLivreToken {
+  id           String   @id @default(cuid())
+  accessToken  String
+  refreshToken String
+  userId       String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model VeiculoCompativel {
