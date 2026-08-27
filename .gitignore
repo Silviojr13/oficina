@@ -21,6 +21,9 @@ Thumbs.db
 # Logs
 *.log
 
+# TypeScript build cache
+*.tsbuildinfo
+
 # Database
 *.db
 *.db-journal
