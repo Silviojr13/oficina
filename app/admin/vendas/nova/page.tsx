@@ -88,9 +88,9 @@ export default function NewSalePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Nova Venda" subtitle="Registrar uma nova transação de venda" />
-
+      <main className="p-4 sm:p-6 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Dados da Venda</CardTitle>
@@ -215,6 +215,7 @@ export default function NewSalePage() {
           <Button className="w-full" onClick={handleSubmit}>Finalizar Venda</Button>
         </CardContent>
       </Card>
-    </div>
+      </main>
+    </>
   );
 }

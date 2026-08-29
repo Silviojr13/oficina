@@ -137,7 +137,7 @@ export default function DashboardPage() {
     <>
       <AdminHeader title="Dashboard" subtitle="Visão geral da oficina" />
 
-      <main className="p-6 space-y-6">
+      <main className="p-4 sm:p-6 space-y-6">
         {/* Pátio da Oficina */}
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">

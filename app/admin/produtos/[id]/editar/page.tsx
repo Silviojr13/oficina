@@ -23,7 +23,12 @@ export default function EditProductPage() {
   }, [id]);
 
   if (!initialData) {
-    return <div>Carregando...</div>; // Or a loading spinner
+    return (
+      <>
+        <AdminHeader title="Editar Produto" subtitle="Carregando..." />
+        <main className="p-4 sm:p-6">Carregando...</main>
+      </>
+    );
   }
 
   const handleSubmit = async (data: Partial<Produto>) => {
@@ -38,16 +43,18 @@ export default function EditProductPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Editar Produto" subtitle={`ID: ${id}`} />
-      <Card>
-        <CardHeader>
-          <CardTitle>Dados do Produto</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ProductForm initialData={initialData} onSubmit={handleSubmit} isEditing={true} />
-        </CardContent>
-      </Card>
-    </div>
+      <main className="p-4 sm:p-6 space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Dados do Produto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProductForm initialData={initialData} onSubmit={handleSubmit} isEditing={true} />
+          </CardContent>
+        </Card>
+      </main>
+    </>
   );
 }

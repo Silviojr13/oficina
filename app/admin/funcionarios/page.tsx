@@ -44,9 +44,9 @@ export default function EmployeesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Funcionários" subtitle="Gestão de colaboradores" />
-
+      <main className="p-4 sm:p-6 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -142,6 +142,7 @@ export default function EmployeesPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </main>
+    </>
   );
 }

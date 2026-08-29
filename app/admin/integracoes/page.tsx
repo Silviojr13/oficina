@@ -14,9 +14,9 @@ export default async function IntegracoesPage({
   const conectado = await isConectado();
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Integrações" subtitle="Conecte o sistema a canais de venda externos" />
-
+      <main className="p-4 sm:p-6 space-y-6">
       {params.conectado && (
         <div className="rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
           Conta do Mercado Livre conectada com sucesso.
@@ -49,6 +49,7 @@ export default async function IntegracoesPage({
           </a>
         </CardContent>
       </Card>
-    </div>
+      </main>
+    </>
   );
 }

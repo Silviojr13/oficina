@@ -67,9 +67,9 @@ export default function ProductListPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Produtos" subtitle="Gerencie o catálogo de produtos" />
-
+      <main className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -176,6 +176,7 @@ export default function ProductListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </main>
+    </>
   );
 }

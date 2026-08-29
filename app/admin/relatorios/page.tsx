@@ -8,7 +8,7 @@ export default function RelatoriosPage() {
   return (
     <div>
       <AdminHeader title="Relatórios" subtitle="Relatórios financeiros e operacionais" />
-      <main className="p-6">
+      <main className="p-4 sm:p-6">
         <Card>
           <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
             <Construction className="h-10 w-10 text-muted-foreground" />

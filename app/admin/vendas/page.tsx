@@ -27,9 +27,9 @@ export default function SalesListPage() {
   const ticketMedio = vendasMes.length > 0 ? totalVendasMes / vendasMes.length : 0;
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Vendas" subtitle="Controle de vendas e pedidos" />
-
+      <main className="p-4 sm:p-6 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -117,6 +117,7 @@ export default function SalesListPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </main>
+    </>
   );
 }

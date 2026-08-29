@@ -13,6 +13,8 @@ import {
   FileText,
   Wrench,
   ChevronLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
   Wallet,
   Users,
   Plug,
@@ -20,7 +22,6 @@ import {
   Moon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAdminUI } from '@/components/admin-theme-provider'
 
@@ -72,7 +73,12 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
     >
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
+        <div
+          className={cn(
+            'flex h-16 items-center border-b border-sidebar-border',
+            collapsed ? 'justify-center px-2' : 'gap-2.5 px-4'
+          )}
+        >
           <Link href="/admin/dashboard" className="flex items-center gap-2.5 min-w-0">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-sidebar-primary">
               <Wrench className="h-4.5 w-4.5 text-sidebar-primary-foreground" />
@@ -86,16 +92,6 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
               </div>
             )}
           </Link>
-          {!forceExpanded && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 flex-shrink-0 text-sidebar-foreground/60 hover:text-sidebar-foreground"
-              onClick={() => setCollapsed(!collapsed)}
-            >
-              <ChevronLeft className={cn('h-4 w-4 transition-transform', collapsed && 'rotate-180')} />
-            </Button>
-          )}
         </div>
 
         {/* Navigation */}
@@ -159,6 +155,23 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
             {theme === 'dark' ? <Sun className="h-4 w-4 flex-shrink-0" /> : <Moon className="h-4 w-4 flex-shrink-0" />}
             {!collapsed && <span>{theme === 'dark' ? 'Tema claro' : 'Tema escuro'}</span>}
           </button>
+
+          {!forceExpanded && (
+            <button
+              type="button"
+              onClick={() => setCollapsed(!collapsed)}
+              title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="h-4 w-4 flex-shrink-0" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4 flex-shrink-0" />
+              )}
+              {!collapsed && <span>Recolher menu</span>}
+            </button>
+          )}
+
           <Link href="/">
             <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors">
               <ChevronLeft className="h-5 w-5 flex-shrink-0" />

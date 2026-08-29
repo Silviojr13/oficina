@@ -31,9 +31,9 @@ export default function SuppliersPage() {
   const mediaAvaliacao = fornecedores.reduce((sum, f) => sum + f.avaliacao, 0) / totalFornecedores || 0;
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Fornecedores" subtitle="Gestão de fornecedores" />
-
+      <main className="p-4 sm:p-6 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -114,6 +114,7 @@ export default function SuppliersPage() {
           </Card>
         ))}
       </div>
-    </div>
+      </main>
+    </>
   );
 }

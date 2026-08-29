@@ -28,9 +28,11 @@ export default function NovaOrdemServicoPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Nova Ordem de Serviço" subtitle="Registrar entrada de veículo para serviço" />
-      <OrdemServicoForm produtos={produtos} onSubmit={handleSubmit} isEditing={false} />
-    </div>
+      <main className="p-4 sm:p-6 space-y-6">
+        <OrdemServicoForm produtos={produtos} onSubmit={handleSubmit} isEditing={false} />
+      </main>
+    </>
   );
 }

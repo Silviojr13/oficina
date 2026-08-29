@@ -78,7 +78,7 @@ export default function OrdensServicoPage() {
     <div className="space-y-6">
       <AdminHeader title="Ordens de Serviço" subtitle="Pátio da oficina em tempo real" />
 
-      <main className="p-6 space-y-6">
+      <main className="p-4 sm:p-6 space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">No pátio agora</CardTitle></CardHeader>

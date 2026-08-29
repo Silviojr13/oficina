@@ -50,8 +50,9 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Gastos" subtitle="Contas a pagar e despesas" />
+      <main className="p-4 sm:p-6 space-y-6">
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -153,6 +154,7 @@ export default function ExpensesPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </main>
+    </>
   );
 }

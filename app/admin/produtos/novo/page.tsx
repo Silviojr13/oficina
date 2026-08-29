@@ -24,12 +24,14 @@ export default function NewProductPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Novo Produto" subtitle="Adicione um novo produto ao catálogo" />
-      <ProductForm
-        onSubmit={handleSubmit}
-        isEditing={false}
-      />
-    </div>
+      <main className="p-4 sm:p-6 space-y-6">
+        <ProductForm
+          onSubmit={handleSubmit}
+          isEditing={false}
+        />
+      </main>
+    </>
   );
 }

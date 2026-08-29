@@ -31,9 +31,9 @@ export default function PurchasesPage() {
   const valorTotalEntradas = entradas.reduce((sum, e) => sum + e.valorTotal, 0);
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title="Compras & Estoque" subtitle="Gestão de entradas de produtos" />
-
+      <main className="p-4 sm:p-6 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -103,6 +103,7 @@ export default function PurchasesPage() {
           ))
         )}
       </div>
-    </div>
+      </main>
+    </>
   );
 }

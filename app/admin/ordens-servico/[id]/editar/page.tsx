@@ -21,7 +21,12 @@ export default function EditarOrdemServicoPage() {
   }, [id]);
 
   if (!ordem) {
-    return <div className="space-y-6"><AdminHeader title="Editar Ordem de Serviço" subtitle="Carregando..." /></div>;
+    return (
+      <>
+        <AdminHeader title="Editar Ordem de Serviço" subtitle="Carregando..." />
+        <main className="p-4 sm:p-6">Carregando...</main>
+      </>
+    );
   }
 
   const handleSubmit = async (data: any) => {
@@ -35,9 +40,11 @@ export default function EditarOrdemServicoPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
       <AdminHeader title={`Editar ${ordem.numero}`} subtitle={`Placa ${ordem.placa}`} />
-      <OrdemServicoForm produtos={produtos} initialData={ordem} onSubmit={handleSubmit} isEditing={true} />
-    </div>
+      <main className="p-4 sm:p-6 space-y-6">
+        <OrdemServicoForm produtos={produtos} initialData={ordem} onSubmit={handleSubmit} isEditing={true} />
+      </main>
+    </>
   );
 }
