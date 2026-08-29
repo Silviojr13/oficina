@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   Wallet,
   Users,
-  Plug
+  Plug,
+  ClipboardList
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,7 @@ import { useState } from 'react'
 
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/ordens-servico', label: 'Ordens de Serviço', icon: ClipboardList },
   { href: '/admin/produtos', label: 'Produtos', icon: Package },
   { href: '/admin/estoque', label: 'Estoque', icon: Boxes, alert: 3 },
   { href: '/admin/vendas', label: 'Vendas', icon: ShoppingCart },

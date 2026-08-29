@@ -82,8 +82,60 @@ model Produto {
   entradasEstoque        ItemMovimentacao_entrada[]
   saidasEstoque          ItemMovimentacao_saida[]
   veiculosCompativeis    VeiculoCompativel[]
+  itensOrdemServico      ItemOrdemServico[]
 
   @@index([categoria])
+}
+
+model OrdemServico {
+  id                  String             @id @default(cuid())
+  numero              String             @unique
+  placa               String
+  veiculoMarca        String?
+  veiculoModelo       String?
+  veiculoAno          Int?
+  veiculoCor          String?
+  kmEntrada           Int
+  clienteNome         String
+  clienteTelefone     String?
+  clienteCpfCnpj      String?
+  mecanicoResponsavel String?
+  dataEntrada         DateTime           @default(now())
+  dataPrevisaoEntrega DateTime?
+  dataSaida           DateTime?
+  problemaRelatado    String?
+  diagnostico         String?
+  codigoFalha         String?
+  sistemaAfetado      String?
+  servicosRealizados  String?
+  status              String             @default("aberto")
+  valorMaoDeObra      Float              @default(0)
+  valorPecas          Float              @default(0)
+  desconto            Float              @default(0)
+  valorTotal          Float              @default(0)
+  formaPagamento      String?
+  garantiaDias        Int?
+  observacoes         String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  itens               ItemOrdemServico[]
+
+  @@index([placa])
+  @@index([status])
+}
+
+model ItemOrdemServico {
+  id             String       @id @default(cuid())
+  ordemServicoId String
+  produtoId      String
+  quantidade     Int
+  valorUnitario  Float
+  valorTotal     Float
+  ordemServico   OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  produto        Produto      @relation(fields: [produtoId], references: [id])
+
+  @@index([ordemServicoId])
+  @@index([produtoId])
 }
 
 model MercadoLivreToken {
