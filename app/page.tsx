@@ -5,7 +5,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ProductCard } from '@/components/product-card'
-import { produtos, categorias } from '@/lib/mock-data'
+import { categorias } from '@/lib/constants'
+import { getProdutosPublicos } from '@/lib/actions/produtos'
+import type { Produto } from '@/lib/types'
+
+// Revalida a home a cada minuto - o catalogo muda pelo admin, nao no build.
+export const revalidate = 60
 
 const categoryIcons: Record<string, React.ReactNode> = {
   motor: <Cog className="h-8 w-8" />,
@@ -38,9 +43,10 @@ const features = [
   },
 ]
 
-export default function HomePage() {
-  const produtosDestaque = produtos.filter(p => p.destaqueHome && p.exibirNoSite).slice(0, 8)
-  const produtosPromocao = produtos.filter(p => p.precoPromocional && p.exibirNoSite).slice(0, 4)
+export default async function HomePage() {
+  const produtos = (await getProdutosPublicos()) as unknown as Produto[]
+  const produtosDestaque = produtos.filter(p => p.destaqueHome).slice(0, 8)
+  const produtosPromocao = produtos.filter(p => p.precoPromocional).slice(0, 4)
   const categoriasDestaque = categorias.slice(0, 5)
 
   return (

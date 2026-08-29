@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Search, SlidersHorizontal, X, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,7 +29,9 @@ import {
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ProductCard } from '@/components/product-card'
-import { produtos, categorias, marcas } from '@/lib/mock-data'
+import { categorias, marcas } from '@/lib/constants'
+import { getProdutosPublicos } from '@/lib/actions/produtos'
+import type { Produto } from '@/lib/types'
 
 // Definição do componente FilterContent como um componente filho
 function FilterContent({ 
@@ -175,6 +177,7 @@ function FilterContent({
 
 
 export default function ProdutosPage() {
+  const [produtos, setProdutos] = useState<Produto[]>([])
   const [search, setSearch] = useState('')
   const [selectedCategoria, setSelectedCategoria] = useState<string>('')
   const [selectedMarcas, setSelectedMarcas] = useState<string[]>([])
@@ -184,23 +187,28 @@ export default function ProdutosPage() {
   const [apenasPromocao, setApenasPromocao] = useState(false)
   const [apenasEstoque, setApenasEstoque] = useState(true)
 
+  useEffect(() => {
+    getProdutosPublicos().then((res) => setProdutos(res as unknown as Produto[]))
+  }, [])
+
   const produtosFiltrados = useMemo(() => {
-    let result = produtos.filter(p => p.exibirNoSite)
+    let result = produtos
 
     // Filtro de busca
     if (search) {
       const searchLower = search.toLowerCase()
-      result = result.filter(p => 
+      result = result.filter(p =>
         p.nome.toLowerCase().includes(searchLower) ||
         p.sku.toLowerCase().includes(searchLower) ||
-        p.codigoOEM.toLowerCase().includes(searchLower) ||
+        (p.codigoOEM ?? '').toLowerCase().includes(searchLower) ||
         p.marca.toLowerCase().includes(searchLower)
       )
     }
 
     // Filtro de categoria
     if (selectedCategoria) {
-      result = result.filter(p => p.categoria.toLowerCase() === selectedCategoria.toLowerCase())
+      const categoriaNome = categorias.find(c => c.id === selectedCategoria)?.nome ?? selectedCategoria
+      result = result.filter(p => p.categoria.toLowerCase() === categoriaNome.toLowerCase())
     }
 
     // Filtro de marcas
@@ -247,7 +255,7 @@ export default function ProdutosPage() {
     }
 
     return result
-  }, [search, selectedCategoria, selectedMarcas, precoMin, precoMax, ordenacao, apenasPromocao, apenasEstoque])
+  }, [produtos, search, selectedCategoria, selectedMarcas, precoMin, precoMax, ordenacao, apenasPromocao, apenasEstoque])
 
   const toggleMarca = (marca: string) => {
     setSelectedMarcas(prev => 

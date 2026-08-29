@@ -1,14 +1,15 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { AdminHeader } from '@/components/admin-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useFuncionarioStore } from '@/lib/admin-store';
-import { Funcionario } from '@/lib/types';
-import { useState } from 'react';
+import { getFuncionarios, createFuncionario, updateFuncionario, deleteFuncionario } from '@/lib/actions/funcionarios';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import FuncionarioForm from '@/components/admin/funcionario-form';
 
 const contratoLabels: Record<string, string> = {
   clt: 'CLT',
@@ -24,24 +25,67 @@ const statusLabels: Record<string, string> = {
   inativo: 'Inativo',
 };
 
+const statusColors: Record<string, 'default' | 'destructive' | 'outline' | 'secondary'> = {
+  ativo: 'default',
+  ferias: 'secondary',
+  afastado: 'destructive',
+  inativo: 'outline',
+};
+
 export default function EmployeesPage() {
-  const { funcionarios, deleteFuncionario } = useFuncionarioStore();
+  const [funcionarios, setFuncionarios] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [editingFuncionario, setEditingFuncionario] = useState<any>(null);
+
+  const carregar = async () => {
+    const resultado = await getFuncionarios(1, 1000);
+    setFuncionarios(resultado.data);
+  };
+
+  useEffect(() => {
+    carregar();
+  }, []);
+
+  const handleOpenEdit = (funcionario: any) => {
+    setEditingFuncionario(funcionario);
+    setOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpen(false);
+    setEditingFuncionario(null);
+  };
+
+  const handleSubmit = async (data: any) => {
+    const resultado = editingFuncionario
+      ? await updateFuncionario(editingFuncionario.id, data)
+      : await createFuncionario(data);
+
+    if (!resultado.success) {
+      toast.error(`Erro ao salvar funcionário: ${resultado.error}`);
+      return;
+    }
+
+    toast.success(editingFuncionario ? 'Funcionário atualizado com sucesso!' : 'Funcionário criado com sucesso!');
+    handleCloseDialog();
+    await carregar();
+  };
+
+  const handleDelete = async (id: string) => {
+    const resultado = await deleteFuncionario(id);
+    if (!resultado.success) {
+      toast.error(`Erro ao excluir funcionário: ${resultado.error}`);
+      return;
+    }
+    await carregar();
+  };
 
   // Calculate KPIs
   const totalAtivos = funcionarios.filter(f => f.status === 'ativo').length;
   const totalFolha = funcionarios
     .filter(f => f.status === 'ativo')
-    .reduce((sum, f) => sum + f.salario, 0);
+    .reduce((sum, f) => sum + (f.salario ?? 0), 0);
   const totalFeriasAfastados = funcionarios.filter(f => f.status === 'ferias' || f.status === 'afastado').length;
-
-  // Defina os tipos explicitamente para evitar erros
-  const statusColors: Record<Funcionario['status'], 'default' | 'destructive' | 'outline' | 'secondary'> = {
-    ativo: 'default',
-    ferias: 'secondary',
-    afastado: 'destructive',
-    inativo: 'outline',
-  };
 
   return (
     <>
@@ -75,17 +119,21 @@ export default function EmployeesPage() {
       </div>
 
       <div className="flex justify-end">
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleCloseDialog())}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => setEditingFuncionario(null)}>
               <Plus className="mr-2 h-4 w-4" /> Novo Funcionário
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Novo Funcionário</DialogTitle>
+              <DialogTitle>{editingFuncionario ? 'Editar Funcionário' : 'Novo Funcionário'}</DialogTitle>
             </DialogHeader>
-            <p>Formulário de cadastro de funcionário irá aqui...</p>
+            <FuncionarioForm
+              initialData={editingFuncionario}
+              onSubmit={handleSubmit}
+              isEditing={!!editingFuncionario}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -126,12 +174,12 @@ export default function EmployeesPage() {
                         {statusLabels[funcionario.status]}
                       </Badge>
                     </td>
-                    <td className="py-2">R$ {funcionario.salario.toFixed(2).replace('.', ',')}</td>
+                    <td className="py-2">R$ {(funcionario.salario ?? 0).toFixed(2).replace('.', ',')}</td>
                     <td className="py-2 flex gap-2">
-                      <Button variant="outline" size="sm" title="Editar">
+                      <Button variant="outline" size="sm" title="Editar" onClick={() => handleOpenEdit(funcionario)}>
                         <Edit className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Editar</span>
                       </Button>
-                      <Button variant="outline" size="sm" title="Excluir" onClick={() => deleteFuncionario(funcionario.id)}>
+                      <Button variant="outline" size="sm" title="Excluir" onClick={() => handleDelete(funcionario.id)}>
                         <Trash2 className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Excluir</span>
                       </Button>
                     </td>

@@ -1,16 +1,16 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { AdminHeader } from '@/components/admin-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useGastoStore } from '@/lib/admin-store';
-import { Gasto } from '@/lib/types'; // Added import for Gasto type
-import { useState } from 'react';
+import { getGastos, createGasto, updateGasto, deleteGasto, marcarGastoComoPago } from '@/lib/actions/gastos';
 import { Plus, CheckCircle, Edit, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import GastoForm from '@/components/admin/gasto-form';
 
-// Define the expense categories and statuses for consistent mapping
 const categoriaLabels: Record<string, string> = {
   aluguel: 'Aluguel',
   salarios: 'Salários',
@@ -25,9 +25,68 @@ const categoriaLabels: Record<string, string> = {
   outros: 'Outros',
 };
 
+const statusColors: Record<string, 'default' | 'destructive' | 'outline' | 'secondary'> = {
+  pago: 'default',
+  pendente: 'secondary',
+  atrasado: 'destructive',
+};
+
 export default function ExpensesPage() {
-  const { gastos, marcarComoPago, deleteGasto } = useGastoStore();
+  const [gastos, setGastos] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [editingGasto, setEditingGasto] = useState<any>(null);
+
+  const carregar = async () => {
+    const resultado = await getGastos(1, 1000);
+    setGastos(resultado.data);
+  };
+
+  useEffect(() => {
+    carregar();
+  }, []);
+
+  const handleOpenEdit = (gasto: any) => {
+    setEditingGasto(gasto);
+    setOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpen(false);
+    setEditingGasto(null);
+  };
+
+  const handleSubmit = async (data: any) => {
+    const resultado = editingGasto
+      ? await updateGasto(editingGasto.id, data)
+      : await createGasto(data);
+
+    if (!resultado.success) {
+      toast.error(`Erro ao salvar gasto: ${resultado.error}`);
+      return;
+    }
+
+    toast.success(editingGasto ? 'Gasto atualizado com sucesso!' : 'Gasto registrado com sucesso!');
+    handleCloseDialog();
+    await carregar();
+  };
+
+  const handleMarcarPago = async (id: string) => {
+    const resultado = await marcarGastoComoPago(id, true);
+    if (!resultado.success) {
+      toast.error(`Erro ao marcar como pago: ${resultado.error}`);
+      return;
+    }
+    await carregar();
+  };
+
+  const handleDelete = async (id: string) => {
+    const resultado = await deleteGasto(id);
+    if (!resultado.success) {
+      toast.error(`Erro ao excluir gasto: ${resultado.error}`);
+      return;
+    }
+    await carregar();
+  };
 
   // Calculate KPIs
   const totalPagoMes = gastos
@@ -41,13 +100,6 @@ export default function ExpensesPage() {
   const totalAtrasado = gastos
     .filter(g => g.status === 'atrasado' || (g.status === 'pendente' && new Date(g.dataVencimento) < new Date()))
     .reduce((sum, g) => sum + g.valor, 0);
-
-  // Defina os tipos explicitamente para evitar erros
-  const statusColors: Record<Gasto['status'], 'default' | 'destructive' | 'outline' | 'secondary'> = {
-    pago: 'default',      // Usando 'default' para 'pago', pois 'success' não existe
-    pendente: 'secondary',
-    atrasado: 'destructive',
-  };
 
   return (
     <>
@@ -82,17 +134,21 @@ export default function ExpensesPage() {
       </div>
 
       <div className="flex justify-end">
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleCloseDialog())}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => setEditingGasto(null)}>
               <Plus className="mr-2 h-4 w-4" /> Novo Gasto
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Novo Gasto</DialogTitle>
+              <DialogTitle>{editingGasto ? 'Editar Gasto' : 'Novo Gasto'}</DialogTitle>
             </DialogHeader>
-            <p>Formulário de cadastro de gasto irá aqui...</p>
+            <GastoForm
+              initialData={editingGasto}
+              onSubmit={handleSubmit}
+              isEditing={!!editingGasto}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -135,14 +191,14 @@ export default function ExpensesPage() {
                           size="sm"
                           title="Marcar como pago"
                           disabled={gasto.status === 'pago'}
-                          onClick={() => marcarComoPago(gasto.id)}
+                          onClick={() => handleMarcarPago(gasto.id)}
                         >
                           <CheckCircle className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Pago</span>
                         </Button>
-                        <Button variant="outline" size="sm" title="Editar">
+                        <Button variant="outline" size="sm" title="Editar" onClick={() => handleOpenEdit(gasto)}>
                           <Edit className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Editar</span>
                         </Button>
-                        <Button variant="outline" size="sm" title="Excluir" onClick={() => deleteGasto(gasto.id)}>
+                        <Button variant="outline" size="sm" title="Excluir" onClick={() => handleDelete(gasto.id)}>
                           <Trash2 className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Excluir</span>
                         </Button>
                       </div>

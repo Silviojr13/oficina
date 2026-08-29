@@ -31,6 +31,56 @@ export async function getProduto(id: string) {
   }
 }
 
+export async function getProdutoBySlug(slug: string) {
+  try {
+    const produto = await prisma.produto.findUnique({
+      where: { slug },
+      include: {
+        veiculosCompativeis: true,
+      },
+    });
+
+    if (!produto) {
+      return null;
+    }
+
+    return {
+      ...produto,
+      referenciaCruzada: produto.referenciaCruzada ? JSON.parse(produto.referenciaCruzada as string) : [],
+      tags: produto.tags ? JSON.parse(produto.tags as string) : [],
+      fotos: produto.fotos ? JSON.parse(produto.fotos as string) : [],
+      caracteristicas: produto.caracteristicas ? JSON.parse(produto.caracteristicas as string) : [],
+    };
+  } catch (error) {
+    console.error('Erro ao buscar produto por slug:', error);
+    return null;
+  }
+}
+
+// Catálogo da loja pública: só produtos marcados para exibição no site.
+export async function getProdutosPublicos() {
+  try {
+    const produtos = await prisma.produto.findMany({
+      where: { exibirNoSite: true },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        veiculosCompativeis: true,
+      },
+    });
+
+    return produtos.map((produto) => ({
+      ...produto,
+      referenciaCruzada: produto.referenciaCruzada ? JSON.parse(produto.referenciaCruzada as string) : [],
+      tags: produto.tags ? JSON.parse(produto.tags as string) : [],
+      fotos: produto.fotos ? JSON.parse(produto.fotos as string) : [],
+      caracteristicas: produto.caracteristicas ? JSON.parse(produto.caracteristicas as string) : [],
+    }));
+  } catch (error) {
+    console.error('Erro ao buscar catálogo público:', error);
+    return [];
+  }
+}
+
 export async function getProdutos(page: number = 1, limit: number = 10, search?: string) {
   try {
     const skip = (page - 1) * limit;
@@ -90,7 +140,9 @@ export async function createProduto(data: any) {
       fotos: data.fotos ? JSON.stringify(data.fotos) : null,
       caracteristicas: data.caracteristicas ? JSON.stringify(data.caracteristicas) : null,
       veiculosCompativeis: {
-        create: data.veiculosCompativeis,
+        // O id vindo do form é só uma chave local (Date.now()) - o Prisma
+        // deve gerar o cuid de verdade.
+        create: data.veiculosCompativeis?.map(({ id, ...v }: any) => v),
       },
     };
 
@@ -107,6 +159,8 @@ export async function createProduto(data: any) {
 
     revalidatePath('/admin/produtos');
     revalidatePath('/admin/produtos/novo');
+    revalidatePath('/');
+    revalidatePath('/produtos');
 
     return { success: true, data: produto };
   } catch (error) {
@@ -158,7 +212,7 @@ export async function updateProduto(id: string, data: any) {
       caracteristicas: data.caracteristicas ? JSON.stringify(data.caracteristicas) : null,
       veiculosCompativeis: {
         deleteMany: {},
-        create: data.veiculosCompativeis,
+        create: data.veiculosCompativeis?.map(({ id, ...v }: any) => v),
       },
     };
 
@@ -172,6 +226,8 @@ export async function updateProduto(id: string, data: any) {
 
     revalidatePath(`/admin/produtos/${id}`);
     revalidatePath('/admin/produtos');
+    revalidatePath('/');
+    revalidatePath('/produtos');
 
     return { success: true, data: produto };
   } catch (error) {
@@ -187,6 +243,8 @@ export async function deleteProduto(id: string) {
     });
 
     revalidatePath('/admin/produtos');
+    revalidatePath('/');
+    revalidatePath('/produtos');
 
     return { success: true };
   } catch (error) {

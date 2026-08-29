@@ -1,46 +1,67 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AdminHeader } from '@/components/admin-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useVendaStore } from '@/lib/admin-store';
-import { useProdutoStore } from '@/lib/admin-store';
-import { useState } from 'react';
-import { ItemMovimentacao } from '@/lib/types';
+import { createSaidaEstoque } from '@/lib/actions/vendas';
+import { getProdutos } from '@/lib/actions/produtos';
+import { toast } from 'sonner';
+import type { Produto } from '@/lib/types';
+
+type ItemVenda = {
+  id: string;
+  produtoId: string;
+  quantidade: number;
+  unidade: string;
+  valorUnitario: number;
+  desconto: number;
+  ipi: number;
+  icms: number;
+  valorTotal: number;
+};
 
 export default function NewSalePage() {
-  const { addVenda } = useVendaStore();
-  const { produtos } = useProdutoStore();
+  const router = useRouter();
+  const [produtos, setProdutos] = useState<Produto[]>([]);
   const [tipoSaida, setTipoSaida] = useState<'venda_balcao' | 'venda_online'>('venda_balcao');
   const [cliente, setCliente] = useState('');
   const [vendedor, setVendedor] = useState('');
-  const [itens, setItens] = useState<ItemMovimentacao[]>([]);
+  const [itens, setItens] = useState<ItemVenda[]>([]);
   const [subtotal, setSubtotal] = useState(0);
   const [descontoTotal, setDescontoTotal] = useState(0);
   const [valorFinal, setValorFinal] = useState(0);
   const [formasPagamento, setFormasPagamento] = useState<string[]>([]);
+  const [enviando, setEnviando] = useState(false);
+
+  useEffect(() => {
+    getProdutos(1, 1000).then((res) => setProdutos(res.data as unknown as Produto[]));
+  }, []);
 
   const addItem = (produtoId: string, quantidade: number) => {
     const produto = produtos.find(p => p.id === produtoId);
     if (!produto) return;
 
-    const newItem: ItemMovimentacao = {
+    const valorUnitario = produto.precoVendaBalcao || produto.precoSite;
+    const newItem: ItemVenda = {
       id: `item_${Date.now()}`,
       produtoId,
       quantidade,
       unidade: 'UN',
-      valorUnitario: produto.precoVendaBalcao || produto.precoSite,
+      valorUnitario,
       desconto: 0,
       ipi: 0,
       icms: 0,
-      valorTotal: (produto.precoVendaBalcao || produto.precoSite) * quantidade,
+      valorTotal: valorUnitario * quantidade,
     };
 
-    setItens([...itens, newItem]);
-    calculateTotals([...itens, newItem]);
+    const novosItens = [...itens, newItem];
+    setItens(novosItens);
+    calculateTotals(novosItens);
   };
 
   const removeItem = (itemId: string) => {
@@ -49,10 +70,9 @@ export default function NewSalePage() {
     calculateTotals(newItens);
   };
 
-  const calculateTotals = (currentItens: ItemMovimentacao[]) => {
+  const calculateTotals = (currentItens: ItemVenda[]) => {
     const sub = currentItens.reduce((sum, item) => sum + item.valorTotal, 0);
-    const desc = descontoTotal; // Assume desconto fixo por simplicidade
-    const valFin = sub - desc;
+    const valFin = sub - descontoTotal;
     setSubtotal(sub);
     setValorFinal(valFin);
   };
@@ -63,28 +83,42 @@ export default function NewSalePage() {
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (itens.length === 0) {
-      alert("A venda deve conter pelo menos um item.");
+      toast.error('A venda deve conter pelo menos um item.');
       return;
     }
-    // @ts-ignore: O objeto venda está incompleto para simplificar o exemplo
-    addVenda({
+    if (!cliente) {
+      toast.error('Informe o cliente.');
+      return;
+    }
+
+    setEnviando(true);
+    const resultado = await createSaidaEstoque({
       tipoSaida,
+      dataHora: new Date().toISOString(),
       cliente,
-      cpfCnpjCliente: '', // Poderia ser adicionado ao formulário
+      cpfCnpjCliente: '',
       vendedor,
-      itens,
+      itens: itens.map(({ id, ...item }) => item),
       subtotal,
       descontoTotal,
       valorFinal,
       formasPagamento,
-      troco: 0, // Poderia ser calculado com base no pagamento
+      troco: 0,
       observacoes: '',
       emitirNFe: false,
       imprimirCupom: false,
     });
-    // Redirecionar ou limpar formulário
+    setEnviando(false);
+
+    if (!resultado.success) {
+      toast.error(`Erro ao registrar venda: ${resultado.error}`);
+      return;
+    }
+
+    toast.success(`Venda ${resultado.data?.numeroPedido} registrada com sucesso!`);
+    router.push('/admin/vendas');
   };
 
   return (
@@ -129,7 +163,7 @@ export default function NewSalePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Selecionar Produto</Label>
-              <Select onValueChange={(pid) => addItem(pid, 1)}> {/* Adiciona com quantidade 1 por padrão */}
+              <Select onValueChange={(pid) => addItem(pid, 1)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Escolha um produto" />
                 </SelectTrigger>
@@ -143,7 +177,7 @@ export default function NewSalePage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[560px]">
               <thead>
                 <tr className="border-b">
                   <th className="py-2 text-left">Produto</th>
@@ -212,7 +246,9 @@ export default function NewSalePage() {
             </div>
           </div>
 
-          <Button className="w-full" onClick={handleSubmit}>Finalizar Venda</Button>
+          <Button className="w-full" onClick={handleSubmit} disabled={enviando}>
+            {enviando ? 'Registrando...' : 'Finalizar Venda'}
+          </Button>
         </CardContent>
       </Card>
       </main>

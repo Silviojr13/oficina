@@ -23,14 +23,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AdminHeader } from '@/components/admin-header'
 import { getOrdensServico } from '@/lib/actions/ordens-servico'
+import { getProdutos } from '@/lib/actions/produtos'
 import {
-  dashboardKPIs,
-  movimentacoesRecentes,
-  vendasUltimos30Dias,
-  topProdutosMes,
-  vendasPorCategoria,
-  produtos
-} from '@/lib/mock-data'
+  getDashboardKPIs,
+  getMovimentacoesRecentes,
+  getVendasUltimosDias,
+  getTopProdutosMes,
+  getVendasPorCategoria,
+} from '@/lib/actions/dashboard'
 import {
   LineChart,
   Line,
@@ -56,74 +56,33 @@ const statusLabels: Record<string, string> = {
   cancelado: 'Cancelada',
 }
 
-const kpiCards = [
-  {
-    title: 'Vendas Hoje',
-    value: `R$ ${dashboardKPIs.vendasHoje.toFixed(2).replace('.', ',')}`,
-    subtitle: `${dashboardKPIs.pedidosHoje} pedidos`,
-    icon: DollarSign,
-    trend: null
-  },
-  {
-    title: 'Vendas do Mês',
-    value: `R$ ${(dashboardKPIs.vendasMes / 1000).toFixed(1)}k`,
-    subtitle: `${dashboardKPIs.variacaoMes > 0 ? '+' : ''}${dashboardKPIs.variacaoMes}% vs mês anterior`,
-    icon: TrendingUp,
-    trend: dashboardKPIs.variacaoMes > 0 ? 'up' : 'down'
-  },
-  {
-    title: 'Ticket Médio',
-    value: `R$ ${dashboardKPIs.ticketMedio.toFixed(2).replace('.', ',')}`,
-    subtitle: 'Valor médio por venda',
-    icon: ShoppingCart,
-    trend: null
-  },
-  {
-    title: 'Margem Bruta',
-    value: `${dashboardKPIs.margemBruta}%`,
-    subtitle: 'Lucro sobre vendas',
-    icon: Percent,
-    trend: 'up'
-  }
-]
-
-const alertCards = [
-  {
-    title: 'Produtos em Falta',
-    value: dashboardKPIs.produtosEmFalta,
-    subtitle: 'Abaixo do estoque mínimo',
-    icon: AlertTriangle,
-    color: 'destructive',
-    href: '/admin/estoque'
-  },
-  {
-    title: 'Contas a Pagar',
-    value: `R$ ${(dashboardKPIs.contasAPagar / 1000).toFixed(1)}k`,
-    subtitle: 'Vencimento em 7 dias',
-    icon: CreditCard,
-    color: 'warning',
-    href: '/admin/compras'
-  },
-  {
-    title: 'CMV do Mês',
-    value: `R$ ${(dashboardKPIs.cmvMes / 1000).toFixed(1)}k`,
-    subtitle: 'Custo das mercadorias',
-    icon: Package,
-    color: 'info',
-    href: '/admin/relatorios'
-  }
-]
-
 const COLORS = ['#F97316', '#22C55E', '#3B82F6', '#EAB308', '#8B5CF6', '#6B7280']
 
-export default function DashboardPage() {
-  // Produtos abaixo do estoque mínimo
-  const produtosBaixoEstoque = produtos.filter(p => p.estoqueAtual <= p.estoqueMinimo && p.estoqueAtual > 0)
+const dashboardKPIsPadrao = {
+  vendasHoje: 0, pedidosHoje: 0, vendasMes: 0, variacaoMes: 0, ticketMedio: 0,
+  produtosEmFalta: 0, contasAPagar: 0, cmvMes: 0, margemBruta: 0,
+}
 
+export default function DashboardPage() {
   const [ordens, setOrdens] = useState<any[]>([])
+  const [produtos, setProdutos] = useState<any[]>([])
+  const [kpis, setKpis] = useState(dashboardKPIsPadrao)
+  const [movimentacoesRecentes, setMovimentacoesRecentes] = useState<any[]>([])
+  const [vendasUltimosDias, setVendasUltimosDias] = useState<{ data: string; valor: number }[]>([])
+  const [topProdutosMes, setTopProdutosMes] = useState<{ nome: string; quantidade: number; valor: number }[]>([])
+  const [vendasPorCategoria, setVendasPorCategoria] = useState<{ categoria: string; valor: number; cor: string }[]>([])
+
   useEffect(() => {
     getOrdensServico(1, 1000).then((res) => setOrdens(res.data))
+    getProdutos(1, 1000).then((res) => setProdutos(res.data))
+    getDashboardKPIs().then(setKpis)
+    getMovimentacoesRecentes(8).then(setMovimentacoesRecentes)
+    getVendasUltimosDias(30).then(setVendasUltimosDias)
+    getTopProdutosMes(10).then(setTopProdutosMes)
+    getVendasPorCategoria().then(setVendasPorCategoria)
   }, [])
+
+  const produtosBaixoEstoque = produtos.filter((p) => p.estoqueAtual <= p.estoqueMinimo)
 
   const ordensAtivas = ordens.filter((o) => !['entregue', 'cancelado'].includes(o.status))
   const aguardandoPeca = ordens.filter((o) => o.status === 'aguardando_peca').length
@@ -132,6 +91,61 @@ export default function DashboardPage() {
   const ultimasAtivas = [...ordensAtivas]
     .sort((a, b) => new Date(b.dataEntrada).getTime() - new Date(a.dataEntrada).getTime())
     .slice(0, 5)
+
+  const kpiCards = [
+    {
+      title: 'Vendas Hoje',
+      value: `R$ ${kpis.vendasHoje.toFixed(2).replace('.', ',')}`,
+      subtitle: `${kpis.pedidosHoje} pedidos`,
+      icon: DollarSign,
+      trend: null as 'up' | 'down' | null,
+    },
+    {
+      title: 'Vendas do Mês',
+      value: `R$ ${(kpis.vendasMes / 1000).toFixed(1)}k`,
+      subtitle: `${kpis.variacaoMes > 0 ? '+' : ''}${kpis.variacaoMes}% vs mês anterior`,
+      icon: TrendingUp,
+      trend: (kpis.variacaoMes > 0 ? 'up' : 'down') as 'up' | 'down',
+    },
+    {
+      title: 'Ticket Médio',
+      value: `R$ ${kpis.ticketMedio.toFixed(2).replace('.', ',')}`,
+      subtitle: 'Valor médio por venda',
+      icon: ShoppingCart,
+      trend: null as 'up' | 'down' | null,
+    },
+    {
+      title: 'Margem Bruta',
+      value: `${kpis.margemBruta}%`,
+      subtitle: 'Lucro sobre vendas',
+      icon: Percent,
+      trend: 'up' as 'up' | 'down',
+    },
+  ]
+
+  const alertCards = [
+    {
+      title: 'Produtos em Falta',
+      value: kpis.produtosEmFalta,
+      subtitle: 'Abaixo do estoque mínimo',
+      icon: AlertTriangle,
+      href: '/admin/estoque',
+    },
+    {
+      title: 'Contas a Pagar',
+      value: `R$ ${(kpis.contasAPagar / 1000).toFixed(1)}k`,
+      subtitle: 'Vencimento em 7 dias',
+      icon: CreditCard,
+      href: '/admin/gastos',
+    },
+    {
+      title: 'CMV do Mês',
+      value: `R$ ${(kpis.cmvMes / 1000).toFixed(1)}k`,
+      subtitle: 'Custo das mercadorias vendidas',
+      icon: Package,
+      href: '/admin/relatorios',
+    },
+  ]
 
   return (
     <>
@@ -260,22 +274,24 @@ export default function DashboardPage() {
         {/* Alertas */}
         <div className="grid gap-4 md:grid-cols-3">
           {alertCards.map((alert, index) => (
-            <Card key={index} className="border-l-4 border-l-destructive">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center">
-                      <alert.icon className="h-4 w-4 text-destructive" />
+            <Link key={index} href={alert.href}>
+              <Card className="border-l-4 border-l-destructive hover:bg-muted/50 transition-colors">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+                        <alert.icon className="h-4 w-4 text-destructive" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{alert.title}</p>
+                        <p className="text-xs text-muted-foreground">{alert.subtitle}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{alert.title}</p>
-                      <p className="text-xs text-muted-foreground">{alert.subtitle}</p>
-                    </div>
+                    <span className="text-xl font-bold">{alert.value}</span>
                   </div>
-                  <span className="text-xl font-bold">{alert.value}</span>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
 
@@ -290,32 +306,32 @@ export default function DashboardPage() {
             <CardContent>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={vendasUltimos30Dias}>
+                  <LineChart data={vendasUltimosDias}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis 
-                      dataKey="data" 
+                    <XAxis
+                      dataKey="data"
                       tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                       tickLine={false}
                       axisLine={false}
                     />
-                    <YAxis 
+                    <YAxis
                       tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                     />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px'
                       }}
                       formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Vendas']}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="valor" 
-                      stroke="hsl(var(--primary))" 
+                    <Line
+                      type="monotone"
+                      dataKey="valor"
+                      stroke="hsl(var(--primary))"
                       strokeWidth={2}
                       dot={false}
                     />
@@ -333,38 +349,44 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topProdutosMes} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
-                    <XAxis 
-                      type="number"
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
-                      type="category"
-                      dataKey="nome" 
-                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                      tickLine={false}
-                      axisLine={false}
-                      width={100}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                      formatter={(value: number) => [value, 'Quantidade']}
-                    />
-                    <Bar 
-                      dataKey="quantidade" 
-                      fill="hsl(var(--primary))" 
-                      radius={[0, 4, 4, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                {topProdutosMes.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topProdutosMes} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
+                      <XAxis
+                        type="number"
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="nome"
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={100}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        formatter={(value: number) => [value, 'Quantidade']}
+                      />
+                      <Bar
+                        dataKey="quantidade"
+                        fill="hsl(var(--primary))"
+                        radius={[0, 4, 4, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                    Nenhuma venda registrada este mês ainda.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -375,48 +397,56 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Vendas por Categoria</CardTitle>
-              <CardDescription>Distribuição do faturamento</CardDescription>
+              <CardDescription>Distribuição do faturamento do mês</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={vendasPorCategoria}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="valor"
-                      nameKey="categoria"
-                    >
-                      {vendasPorCategoria.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                      formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Vendas']}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="grid grid-cols-1 gap-2 mt-4 sm:grid-cols-2">
-                {vendasPorCategoria.map((cat, index) => (
-                  <div key={cat.categoria} className="flex items-center gap-2 text-xs min-w-0">
-                    <div
-                      className="h-3 w-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    />
-                    <span className="text-muted-foreground truncate">{cat.categoria}</span>
+              {vendasPorCategoria.length > 0 ? (
+                <>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={vendasPorCategoria}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="valor"
+                          nameKey="categoria"
+                        >
+                          {vendasPorCategoria.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.cor} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
+                          }}
+                          formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Vendas']}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-                ))}
-              </div>
+                  <div className="grid grid-cols-1 gap-2 mt-4 sm:grid-cols-2">
+                    {vendasPorCategoria.map((cat) => (
+                      <div key={cat.categoria} className="flex items-center gap-2 text-xs min-w-0">
+                        <div
+                          className="h-3 w-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: cat.cor }}
+                        />
+                        <span className="text-muted-foreground truncate">{cat.categoria}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
+                  Nenhuma venda registrada este mês ainda.
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -427,57 +457,56 @@ export default function DashboardPage() {
                 <CardTitle>Movimentações Recentes</CardTitle>
                 <CardDescription>Últimas entradas e saídas</CardDescription>
               </div>
-              <Button variant="outline" size="sm" className="self-start sm:self-auto">Ver todas</Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {movimentacoesRecentes.slice(0, 8).map((mov) => (
-                  <div
-                    key={mov.id}
-                    className="flex flex-wrap items-center gap-y-2 justify-between py-2 border-b border-border last:border-0"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`h-8 w-8 flex-shrink-0 rounded-full flex items-center justify-center ${
-                        mov.tipo === 'entrada' ? 'bg-success/10' : 'bg-primary/10'
-                      }`}>
-                        {mov.tipo === 'entrada' ? (
-                          <TrendingDown className="h-4 w-4 text-success" />
-                        ) : (
-                          <TrendingUp className="h-4 w-4 text-primary" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{mov.descricao}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(mov.data).toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 flex-shrink-0 ml-11 sm:ml-0">
-                      <div className="text-right">
-                        <p className="text-sm font-medium">
-                          {mov.quantidade} {mov.quantidade === 1 ? 'item' : 'itens'}
-                        </p>
-                        {mov.valor > 0 && (
+              {movimentacoesRecentes.length > 0 ? (
+                <div className="space-y-3">
+                  {movimentacoesRecentes.map((mov) => (
+                    <div
+                      key={mov.id}
+                      className="flex flex-wrap items-center gap-y-2 justify-between py-2 border-b border-border last:border-0"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`h-8 w-8 flex-shrink-0 rounded-full flex items-center justify-center ${
+                          mov.tipo === 'entrada' ? 'bg-success/10' : 'bg-primary/10'
+                        }`}>
+                          {mov.tipo === 'entrada' ? (
+                            <TrendingDown className="h-4 w-4 text-success" />
+                          ) : (
+                            <TrendingUp className="h-4 w-4 text-primary" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{mov.descricao}</p>
                           <p className="text-xs text-muted-foreground">
-                            R$ {mov.valor.toFixed(2).replace('.', ',')}
+                            {new Date(mov.data).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </p>
-                        )}
+                        </div>
                       </div>
-                      <Badge
-                        variant={mov.status === 'concluido' ? 'default' : mov.status === 'pendente' ? 'secondary' : 'destructive'}
-                      >
-                        {mov.status === 'concluido' ? 'Concluído' : mov.status === 'pendente' ? 'Pendente' : 'Cancelado'}
-                      </Badge>
+                      <div className="flex items-center gap-3 flex-shrink-0 ml-11 sm:ml-0">
+                        <div className="text-right">
+                          <p className="text-sm font-medium">
+                            {mov.quantidade} {mov.quantidade === 1 ? 'item' : 'itens'}
+                          </p>
+                          {mov.valor > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              R$ {mov.valor.toFixed(2).replace('.', ',')}
+                            </p>
+                          )}
+                        </div>
+                        <Badge variant="default">Concluído</Badge>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhuma movimentação registrada ainda.</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -493,7 +522,9 @@ export default function DashboardPage() {
                 </CardTitle>
                 <CardDescription>Ação necessária para reposição</CardDescription>
               </div>
-              <Button size="sm" className="self-start sm:self-auto">Gerar Pedido de Compra</Button>
+              <Button asChild size="sm" className="self-start sm:self-auto">
+                <Link href="/admin/compras">Nova Entrada</Link>
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -524,8 +555,8 @@ export default function DashboardPage() {
                           {produto.estoqueMinimo}
                         </td>
                         <td className="py-3 text-right">
-                          <Button variant="outline" size="sm">
-                            Repor
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={`/admin/produtos/${produto.id}/editar`}>Repor</Link>
                           </Button>
                         </td>
                       </tr>

@@ -1,13 +1,13 @@
 'use client'
 
-import { use } from 'react'
+import { use, useEffect } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { 
-  ShoppingCart, 
-  Package, 
-  Truck, 
-  Shield, 
+import {
+  ShoppingCart,
+  Package,
+  Truck,
+  Shield,
   ChevronRight,
   Plus,
   Minus,
@@ -27,7 +27,8 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ProductCard } from '@/components/product-card'
 import { useCartStore } from '@/lib/store'
-import { produtos } from '@/lib/mock-data'
+import { getProdutoBySlug, getProdutosPublicos } from '@/lib/actions/produtos'
+import type { Produto } from '@/lib/types'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -35,9 +36,34 @@ interface PageProps {
 
 export default function ProdutoPage({ params }: PageProps) {
   const resolvedParams = use(params)
-  const produto = produtos.find(p => p.slug === resolvedParams.slug)
+  const [produto, setProduto] = useState<Produto | null | undefined>(undefined)
+  const [produtosRelacionados, setProdutosRelacionados] = useState<Produto[]>([])
   const [quantidade, setQuantidade] = useState(1)
   const addItem = useCartStore((state) => state.addItem)
+
+  useEffect(() => {
+    getProdutoBySlug(resolvedParams.slug).then(async (p) => {
+      setProduto(p as unknown as Produto | null)
+      if (p) {
+        const catalogo = (await getProdutosPublicos()) as unknown as Produto[]
+        setProdutosRelacionados(
+          catalogo.filter((rel) => rel.categoria === p.categoria && rel.id !== p.id).slice(0, 4)
+        )
+      }
+    })
+  }, [resolvedParams.slug])
+
+  if (produto === undefined) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <SiteHeader />
+        <main className="flex-1 container mx-auto px-4 py-16 text-center text-muted-foreground">
+          Carregando...
+        </main>
+        <SiteFooter />
+      </div>
+    )
+  }
 
   if (!produto) {
     notFound()
@@ -45,17 +71,12 @@ export default function ProdutoPage({ params }: PageProps) {
 
   const precoAtual = produto.precoPromocional || produto.precoSite
   const temPromocao = produto.precoPromocional && produto.precoPromocional < produto.precoSite
-  const desconto = temPromocao 
+  const desconto = temPromocao
     ? Math.round(((produto.precoSite - produto.precoPromocional!) / produto.precoSite) * 100)
     : 0
 
   const emEstoque = produto.estoqueAtual > 0
   const estoqueBaixo = produto.estoqueAtual > 0 && produto.estoqueAtual <= produto.estoqueMinimo
-
-  // Produtos relacionados (mesma categoria)
-  const produtosRelacionados = produtos
-    .filter(p => p.categoria === produto.categoria && p.id !== produto.id && p.exibirNoSite)
-    .slice(0, 4)
 
   const handleAddToCart = () => {
     addItem(produto, quantidade)

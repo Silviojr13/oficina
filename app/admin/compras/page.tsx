@@ -1,34 +1,59 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { AdminHeader } from '@/components/admin-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useEntradaEstoqueStore } from '@/lib/admin-store';
-import { useState } from 'react';
+import { getEntradasEstoque, createEntradaEstoque, deleteEntradaEstoque } from '@/lib/actions/entradas-estoque';
+import { getFornecedores } from '@/lib/actions/fornecedores';
+import { getProdutos } from '@/lib/actions/produtos';
 import { Plus, Edit, Trash2 } from 'lucide-react';
-
-// Simple placeholder form component for now
-const EntradaEstoqueForm = ({ onSubmit, onClose }: { onSubmit: () => void, onClose: () => void }) => {
-  return (
-    <div>
-      <p>Formulário de Entrada de Estoque irá aqui...</p>
-      <div className="flex justify-end space-x-2 mt-4">
-        <Button variant="outline" onClick={onClose}>Cancelar</Button>
-        <Button onClick={onSubmit}>Salvar Entrada</Button>
-      </div>
-    </div>
-  );
-};
+import { toast } from 'sonner';
+import EntradaEstoqueForm from '@/components/admin/entrada-estoque-form';
+import type { Produto } from '@/lib/types';
 
 export default function PurchasesPage() {
-  const { entradas, deleteEntradaEstoque } = useEntradaEstoqueStore();
+  const [entradas, setEntradas] = useState<any[]>([]);
+  const [fornecedores, setFornecedores] = useState<any[]>([]);
+  const [produtos, setProdutos] = useState<Produto[]>([]);
   const [open, setOpen] = useState(false);
+
+  const carregar = async () => {
+    const resultado = await getEntradasEstoque(1, 1000);
+    setEntradas(resultado.data);
+  };
+
+  useEffect(() => {
+    carregar();
+    getFornecedores(1, 1000).then((res) => setFornecedores(res.data));
+    getProdutos(1, 1000).then((res) => setProdutos(res.data as unknown as Produto[]));
+  }, []);
+
+  const handleSubmit = async (data: any) => {
+    const resultado = await createEntradaEstoque(data);
+    if (!resultado.success) {
+      toast.error(`Erro ao registrar entrada: ${resultado.error}`);
+      return;
+    }
+    toast.success('Entrada de estoque registrada com sucesso!');
+    setOpen(false);
+    await carregar();
+  };
+
+  const handleDelete = async (id: string) => {
+    const resultado = await deleteEntradaEstoque(id);
+    if (!resultado.success) {
+      toast.error(`Erro ao excluir entrada: ${resultado.error}`);
+      return;
+    }
+    await carregar();
+  };
 
   // Calculate KPIs
   const totalEntradas = entradas.length;
-  const valorTotalEntradas = entradas.reduce((sum, e) => sum + e.valorTotal, 0);
+  const valorTotalEntradas = entradas.reduce((sum, e) => sum + (e.valorTotal ?? 0), 0);
 
   return (
     <>
@@ -65,7 +90,7 @@ export default function PurchasesPage() {
             <DialogHeader>
               <DialogTitle>Nova Entrada de Estoque</DialogTitle>
             </DialogHeader>
-            <EntradaEstoqueForm onSubmit={() => setOpen(false)} onClose={() => setOpen(false)} />
+            <EntradaEstoqueForm produtos={produtos} fornecedores={fornecedores} onSubmit={handleSubmit} isEditing={false} />
           </DialogContent>
         </Dialog>
       </div>
@@ -83,18 +108,15 @@ export default function PurchasesPage() {
                     <p className="text-sm text-muted-foreground break-all">Chave: {entrada.chaveAcesso}</p>
                   </div>
                   <Badge variant="outline" className="flex-shrink-0">
-                    R$ {entrada.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    R$ {(entrada.valorTotal ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="p-4 space-y-2">
                 <p><span className="font-medium">Data da Entrada:</span> {new Date(entrada.dataEntrada).toLocaleDateString('pt-BR')}</p>
-                <p><span className="font-medium">Fornecedor:</span> {entrada.fornecedorId}</p>
+                <p><span className="font-medium">Fornecedor:</span> {entrada.fornecedor?.nomeFantasia ?? entrada.fornecedorId}</p>
                 <div className="flex justify-end space-x-2 mt-4">
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4 mr-2" /> Editar
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => deleteEntradaEstoque(entrada.id)}>
+                  <Button variant="destructive" size="sm" onClick={() => handleDelete(entrada.id)}>
                     <Trash2 className="h-4 w-4 mr-2" /> Excluir
                   </Button>
                 </div>

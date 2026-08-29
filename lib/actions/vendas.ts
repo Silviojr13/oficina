@@ -84,15 +84,36 @@ export async function getSaidasEstoque(page: number = 1, limit: number = 10, sea
   }
 }
 
+async function proximoNumeroPedido() {
+  const ultima = await prisma.saidaEstoque.findFirst({
+    orderBy: { createdAt: 'desc' },
+    where: { numeroPedido: { not: null } },
+    select: { numeroPedido: true },
+  });
+  const ultimoNumero = ultima?.numeroPedido ? parseInt(ultima.numeroPedido.replace('PED-', ''), 10) || 0 : 0;
+  return `PED-${(ultimoNumero + 1).toString().padStart(3, '0')}`;
+}
+
 // Note: Creating/updating/deleting sales might involve more complex logic (stock adjustment, etc.)
 // For now, implementing basic CRUD. More complex logic would be needed in a real application.
 export async function createSaidaEstoque(data: any) {
   try {
+    const numeroPedido = data.numeroPedido || (await proximoNumeroPedido());
     const vendaData = {
       ...data,
+      numeroPedido,
       formasPagamento: data.formasPagamento ? JSON.stringify(data.formasPagamento) : null,
       itens: {
-        create: data.itens,
+        create: data.itens.map((item: any) => ({
+          produtoId: item.produtoId,
+          quantidade: item.quantidade,
+          unidade: item.unidade,
+          valorUnitario: item.valorUnitario,
+          desconto: item.desconto,
+          ipi: item.ipi,
+          icms: item.icms,
+          valorTotal: item.valorTotal,
+        })),
       },
     };
 

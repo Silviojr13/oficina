@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
 import { Produto, VeiculoCompativel } from '@/lib/types';
-import { categorias, marcas, montadoras, fornecedores } from '@/lib/mock-data';
+import { categorias, marcas, montadoras } from '@/lib/constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useEffect, useState } from 'react'; // Added useState
@@ -100,9 +100,10 @@ interface ProductFormProps {
   initialData?: Partial<Produto>;
   onSubmit: (data: Partial<Produto>) => void;
   isEditing: boolean;
+  fornecedores?: { id: string; nomeFantasia: string }[];
 }
 
-export default function ProductForm({ initialData, onSubmit, isEditing }: ProductFormProps) {
+export default function ProductForm({ initialData, onSubmit, isEditing, fornecedores = [] }: ProductFormProps) {
   const {
     register,
     handleSubmit,

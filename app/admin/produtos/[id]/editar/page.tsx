@@ -4,6 +4,7 @@ import { AdminHeader } from '@/components/admin-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useParams, useRouter } from 'next/navigation';
 import { getProduto, updateProduto } from '@/lib/actions/produtos';
+import { getFornecedores } from '@/lib/actions/fornecedores';
 import { useEffect, useState } from 'react';
 import { Produto } from '@/lib/types';
 import { toast } from 'sonner';
@@ -13,6 +14,7 @@ export default function EditProductPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [initialData, setInitialData] = useState<Partial<Produto> | null>(null);
+  const [fornecedores, setFornecedores] = useState<any[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -20,6 +22,7 @@ export default function EditProductPage() {
         if (produto) setInitialData(produto as unknown as Partial<Produto>);
       });
     }
+    getFornecedores(1, 1000).then((res) => setFornecedores(res.data));
   }, [id]);
 
   if (!initialData) {
@@ -51,7 +54,7 @@ export default function EditProductPage() {
             <CardTitle>Dados do Produto</CardTitle>
           </CardHeader>
           <CardContent>
-            <ProductForm initialData={initialData} onSubmit={handleSubmit} isEditing={true} />
+            <ProductForm initialData={initialData} onSubmit={handleSubmit} isEditing={true} fornecedores={fornecedores} />
           </CardContent>
         </Card>
       </main>

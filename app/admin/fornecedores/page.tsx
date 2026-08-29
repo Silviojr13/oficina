@@ -1,19 +1,29 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { AdminHeader } from '@/components/admin-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useFornecedorStore } from '@/lib/admin-store';
-import { useState } from 'react';
+import { getFornecedores, createFornecedor, updateFornecedor, deleteFornecedor } from '@/lib/actions/fornecedores';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import FornecedorForm from '@/components/admin/fornecedor-form';
 
 export default function SuppliersPage() {
-  const { fornecedores, deleteFornecedor } = useFornecedorStore();
+  const [fornecedores, setFornecedores] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-  const [editingFornecedor, setEditingFornecedor] = useState<any>(null); // Using any for simplicity, ideally would be Fornecedor | null
+  const [editingFornecedor, setEditingFornecedor] = useState<any>(null);
+
+  const carregar = async () => {
+    const resultado = await getFornecedores(1, 1000);
+    setFornecedores(resultado.data);
+  };
+
+  useEffect(() => {
+    carregar();
+  }, []);
 
   const handleOpenEdit = (fornecedor: any) => {
     setEditingFornecedor(fornecedor);
@@ -25,10 +35,36 @@ export default function SuppliersPage() {
     setEditingFornecedor(null);
   };
 
+  const handleSubmit = async (data: any) => {
+    const resultado = editingFornecedor
+      ? await updateFornecedor(editingFornecedor.id, data)
+      : await createFornecedor(data);
+
+    if (!resultado.success) {
+      toast.error(`Erro ao salvar fornecedor: ${resultado.error}`);
+      return;
+    }
+
+    toast.success(editingFornecedor ? 'Fornecedor atualizado com sucesso!' : 'Fornecedor criado com sucesso!');
+    handleCloseDialog();
+    await carregar();
+  };
+
+  const handleDelete = async (id: string) => {
+    const resultado = await deleteFornecedor(id);
+    if (!resultado.success) {
+      toast.error(`Erro ao excluir fornecedor: ${resultado.error}`);
+      return;
+    }
+    await carregar();
+  };
+
   // Calculate KPIs
   const totalFornecedores = fornecedores.length;
-  const fornecedoresAtivos = fornecedores.filter(f => f.avaliacao >= 4).length; // Assuming rating >= 4 is active/satisfactory
-  const mediaAvaliacao = fornecedores.reduce((sum, f) => sum + f.avaliacao, 0) / totalFornecedores || 0;
+  const fornecedoresAtivos = fornecedores.filter(f => (f.avaliacao ?? 0) >= 4).length;
+  const mediaAvaliacao = totalFornecedores > 0
+    ? fornecedores.reduce((sum, f) => sum + (f.avaliacao ?? 0), 0) / totalFornecedores
+    : 0;
 
   return (
     <>
@@ -63,7 +99,7 @@ export default function SuppliersPage() {
 
       <div className="flex flex-wrap justify-between items-center gap-3">
         <h2 className="text-xl font-semibold">Lista de Fornecedores</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleCloseDialog())}>
           <DialogTrigger asChild>
             <Button onClick={() => setEditingFornecedor(null)}>
               <Plus className="mr-2 h-4 w-4" /> Novo Fornecedor
@@ -75,7 +111,7 @@ export default function SuppliersPage() {
             </DialogHeader>
             <FornecedorForm
               initialData={editingFornecedor}
-              onSubmit={() => handleCloseDialog()}
+              onSubmit={handleSubmit}
               isEditing={!!editingFornecedor}
             />
           </DialogContent>
@@ -91,8 +127,8 @@ export default function SuppliersPage() {
                   <CardTitle className="text-lg">{fornecedor.nomeFantasia}</CardTitle>
                   <p className="text-sm text-muted-foreground">{fornecedor.razaoSocial}</p>
                 </div>
-                <Badge variant={fornecedor.avaliacao >= 4 ? 'default' : 'secondary'}>
-                  {fornecedor.avaliacao}/5
+                <Badge variant={(fornecedor.avaliacao ?? 0) >= 4 ? 'default' : 'secondary'}>
+                  {fornecedor.avaliacao ?? '—'}/5
                 </Badge>
               </div>
             </CardHeader>
@@ -106,7 +142,7 @@ export default function SuppliersPage() {
                 <Button variant="outline" size="sm" onClick={() => handleOpenEdit(fornecedor)}>
                   <Edit className="h-4 w-4 mr-2" /> Editar
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => deleteFornecedor(fornecedor.id)}>
+                <Button variant="destructive" size="sm" onClick={() => handleDelete(fornecedor.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Excluir
                 </Button>
               </div>
