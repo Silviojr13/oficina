@@ -101,7 +101,7 @@ export default function ProductListPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[860px]">
               <thead>
                 <tr className="border-b">
                   <th className="py-2 text-left">Imagem</th>
@@ -144,13 +144,15 @@ export default function ProductListPage() {
                       )}
                       {!produto.mercadoLivreStatus && <Badge variant="outline">Não enviado</Badge>}
                     </td>
-                    <td className="py-2 flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => router.push(`/admin/produtos/${produto.id}/editar`)}>
-                        <Edit className="h-4 w-4 mr-1" /> Editar
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => setProdutoToDelete(produto.id)}>
-                        <Trash2 className="h-4 w-4 mr-1" /> Excluir
-                      </Button>
+                    <td className="py-2">
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" title="Editar" onClick={() => router.push(`/admin/produtos/${produto.id}/editar`)}>
+                          <Edit className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Editar</span>
+                        </Button>
+                        <Button variant="outline" size="sm" title="Excluir" onClick={() => setProdutoToDelete(produto.id)}>
+                          <Trash2 className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Excluir</span>
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

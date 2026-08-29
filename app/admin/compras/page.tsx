@@ -53,7 +53,7 @@ export default function PurchasesPage() {
         </Card>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h2 className="text-xl font-semibold">Histórico de Entradas</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -77,12 +77,12 @@ export default function PurchasesPage() {
           entradas.map((entrada) => (
             <Card key={entrada.id} className="overflow-hidden">
               <CardHeader className="bg-muted pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
+                <div className="flex flex-wrap justify-between items-start gap-2">
+                  <div className="min-w-0">
                     <CardTitle className="text-lg">NF: {entrada.numeroNF}</CardTitle>
-                    <p className="text-sm text-muted-foreground">Chave: {entrada.chaveAcesso}</p>
+                    <p className="text-sm text-muted-foreground break-all">Chave: {entrada.chaveAcesso}</p>
                   </div>
-                  <Badge variant="outline">
+                  <Badge variant="outline" className="flex-shrink-0">
                     R$ {entrada.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Badge>
                 </div>

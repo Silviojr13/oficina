@@ -252,19 +252,21 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
             <Button type="button" variant="outline" onClick={adicionarServico}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
           </div>
           {servicos.length > 0 && (
-            <table className="w-full text-sm">
-              <tbody>
-                {servicos.map((s) => (
-                  <tr key={s.id} className="border-b">
-                    <td className="py-2">{s.descricao}</td>
-                    <td className="py-2 w-32">R$ {s.valor.toFixed(2).replace('.', ',')}</td>
-                    <td className="py-2 w-10">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removerServico(s.id)}><Trash2 className="h-4 w-4" /></Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[420px] text-sm">
+                <tbody>
+                  {servicos.map((s) => (
+                    <tr key={s.id} className="border-b">
+                      <td className="py-2">{s.descricao}</td>
+                      <td className="py-2 w-32 whitespace-nowrap">R$ {s.valor.toFixed(2).replace('.', ',')}</td>
+                      <td className="py-2 w-10">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removerServico(s.id)}><Trash2 className="h-4 w-4" /></Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -285,23 +287,25 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
             <Button type="button" variant="outline" onClick={adicionarPeca}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
           </div>
           {itens.length > 0 && (
-            <table className="w-full text-sm">
-              <tbody>
-                {itens.map((item, index) => {
-                  const produto = produtos.find((p) => p.id === item.produtoId);
-                  return (
-                    <tr key={index} className="border-b">
-                      <td className="py-2">{produto?.nome}</td>
-                      <td className="py-2 w-16">x{item.quantidade}</td>
-                      <td className="py-2 w-32">R$ {item.valorTotal.toFixed(2).replace('.', ',')}</td>
-                      <td className="py-2 w-10">
-                        <Button type="button" variant="ghost" size="sm" onClick={() => removerPeca(index)}><Trash2 className="h-4 w-4" /></Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[420px] text-sm">
+                <tbody>
+                  {itens.map((item, index) => {
+                    const produto = produtos.find((p) => p.id === item.produtoId);
+                    return (
+                      <tr key={index} className="border-b">
+                        <td className="py-2">{produto?.nome}</td>
+                        <td className="py-2 w-16 whitespace-nowrap">x{item.quantidade}</td>
+                        <td className="py-2 w-32 whitespace-nowrap">R$ {item.valorTotal.toFixed(2).replace('.', ',')}</td>
+                        <td className="py-2 w-10">
+                          <Button type="button" variant="ghost" size="sm" onClick={() => removerPeca(index)}><Trash2 className="h-4 w-4" /></Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>

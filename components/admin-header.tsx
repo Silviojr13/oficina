@@ -32,7 +32,7 @@ export function AdminHeader({ title, subtitle }: AdminHeaderProps) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-72">
-          <AdminSidebar />
+          <AdminSidebar forceExpanded />
         </SheetContent>
       </Sheet>
 

@@ -1,4 +1,6 @@
 import { AdminSidebar } from '@/components/admin-sidebar'
+import { AdminThemeProvider } from '@/components/admin-theme-provider'
+import { AdminContentArea } from '@/components/admin-content-area'
 
 export default function AdminLayout({
   children,
@@ -6,16 +8,14 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="theme-oficina min-h-screen bg-background text-foreground">
+    <AdminThemeProvider>
       {/* Sidebar - Desktop */}
       <div className="hidden lg:block">
         <AdminSidebar />
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-72">
-        {children}
-      </div>
-    </div>
+      <AdminContentArea>{children}</AdminContentArea>
+    </AdminThemeProvider>
   )
 }

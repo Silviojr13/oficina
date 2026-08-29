@@ -140,7 +140,7 @@ export default function DashboardPage() {
       <main className="p-6 space-y-6">
         {/* Pátio da Oficina */}
         <div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <h2 className="font-display text-lg font-bold uppercase flex items-center gap-2">
               <Wrench className="h-5 w-5 text-primary" /> Pátio da Oficina
             </h2>
@@ -406,14 +406,14 @@ export default function DashboardPage() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="grid grid-cols-2 gap-2 mt-4">
+              <div className="grid grid-cols-1 gap-2 mt-4 sm:grid-cols-2">
                 {vendasPorCategoria.map((cat, index) => (
-                  <div key={cat.categoria} className="flex items-center gap-2 text-xs">
-                    <div 
-                      className="h-3 w-3 rounded-full" 
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }} 
+                  <div key={cat.categoria} className="flex items-center gap-2 text-xs min-w-0">
+                    <div
+                      className="h-3 w-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
                     />
-                    <span className="text-muted-foreground">{cat.categoria}</span>
+                    <span className="text-muted-foreground truncate">{cat.categoria}</span>
                   </div>
                 ))}
               </div>
@@ -422,22 +422,22 @@ export default function DashboardPage() {
 
           {/* Movimentações Recentes */}
           <Card className="lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle>Movimentações Recentes</CardTitle>
                 <CardDescription>Últimas entradas e saídas</CardDescription>
               </div>
-              <Button variant="outline" size="sm">Ver todas</Button>
+              <Button variant="outline" size="sm" className="self-start sm:self-auto">Ver todas</Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {movimentacoesRecentes.slice(0, 8).map((mov) => (
-                  <div 
-                    key={mov.id} 
-                    className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                  <div
+                    key={mov.id}
+                    className="flex flex-wrap items-center gap-y-2 justify-between py-2 border-b border-border last:border-0"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`h-8 w-8 flex-shrink-0 rounded-full flex items-center justify-center ${
                         mov.tipo === 'entrada' ? 'bg-success/10' : 'bg-primary/10'
                       }`}>
                         {mov.tipo === 'entrada' ? (
@@ -446,11 +446,11 @@ export default function DashboardPage() {
                           <TrendingUp className="h-4 w-4 text-primary" />
                         )}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">{mov.descricao}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{mov.descricao}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(mov.data).toLocaleDateString('pt-BR', { 
-                            day: '2-digit', 
+                          {new Date(mov.data).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
                             month: '2-digit',
                             hour: '2-digit',
                             minute: '2-digit'
@@ -458,22 +458,23 @@ export default function DashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">
-                        {mov.quantidade} {mov.quantidade === 1 ? 'item' : 'itens'}
-                      </p>
-                      {mov.valor > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          R$ {mov.valor.toFixed(2).replace('.', ',')}
+                    <div className="flex items-center gap-3 flex-shrink-0 ml-11 sm:ml-0">
+                      <div className="text-right">
+                        <p className="text-sm font-medium">
+                          {mov.quantidade} {mov.quantidade === 1 ? 'item' : 'itens'}
                         </p>
-                      )}
+                        {mov.valor > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            R$ {mov.valor.toFixed(2).replace('.', ',')}
+                          </p>
+                        )}
+                      </div>
+                      <Badge
+                        variant={mov.status === 'concluido' ? 'default' : mov.status === 'pendente' ? 'secondary' : 'destructive'}
+                      >
+                        {mov.status === 'concluido' ? 'Concluído' : mov.status === 'pendente' ? 'Pendente' : 'Cancelado'}
+                      </Badge>
                     </div>
-                    <Badge 
-                      variant={mov.status === 'concluido' ? 'default' : mov.status === 'pendente' ? 'secondary' : 'destructive'}
-                      className="ml-4"
-                    >
-                      {mov.status === 'concluido' ? 'Concluído' : mov.status === 'pendente' ? 'Pendente' : 'Cancelado'}
-                    </Badge>
                   </div>
                 ))}
               </div>
@@ -484,15 +485,15 @@ export default function DashboardPage() {
         {/* Produtos Abaixo do Estoque */}
         {produtosBaixoEstoque.length > 0 && (
           <Card className="border-destructive/50">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
                   Produtos Abaixo do Estoque Mínimo
                 </CardTitle>
                 <CardDescription>Ação necessária para reposição</CardDescription>
               </div>
-              <Button size="sm">Gerar Pedido de Compra</Button>
+              <Button size="sm" className="self-start sm:self-auto">Gerar Pedido de Compra</Button>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">

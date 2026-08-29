@@ -96,7 +96,7 @@ export default function EmployeesPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="border-b">
                   <th className="py-2 text-left">Nome</th>
@@ -128,11 +128,11 @@ export default function EmployeesPage() {
                     </td>
                     <td className="py-2">R$ {funcionario.salario.toFixed(2).replace('.', ',')}</td>
                     <td className="py-2 flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4 mr-1" /> Editar
+                      <Button variant="outline" size="sm" title="Editar">
+                        <Edit className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Editar</span>
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => deleteFuncionario(funcionario.id)}>
-                        <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                      <Button variant="outline" size="sm" title="Excluir" onClick={() => deleteFuncionario(funcionario.id)}>
+                        <Trash2 className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Excluir</span>
                       </Button>
                     </td>
                   </tr>

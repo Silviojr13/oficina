@@ -61,7 +61,7 @@ export default function SuppliersPage() {
         </Card>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h2 className="text-xl font-semibold">Lista de Fornecedores</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>

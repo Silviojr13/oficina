@@ -190,7 +190,7 @@ export default function ProductForm({ initialData, onSubmit, isEditing }: Produc
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       <Tabs defaultValue="geral" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-5">
           <TabsTrigger value="geral">Geral</TabsTrigger>
           <TabsTrigger value="compatibilidade">Compatibilidade</TabsTrigger>
           <TabsTrigger value="preco">Preço & Fiscal</TabsTrigger>

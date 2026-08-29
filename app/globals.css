@@ -172,6 +172,54 @@
   color: var(--foreground);
 }
 
+/* Variante escura do tema "Bancada" — ativada via .dark no mesmo
+   elemento que tem .theme-oficina (ver AdminThemeProvider). Não usa
+   prefers-color-scheme porque é uma preferência do usuário, salva por
+   ele mesmo, e não deve variar sozinha com o SO. */
+.theme-oficina.dark {
+  --background: oklch(0.17 0.012 255);
+  --foreground: oklch(0.92 0.006 95);
+  --card: oklch(0.21 0.014 255);
+  --card-foreground: oklch(0.92 0.006 95);
+  --popover: oklch(0.21 0.014 255);
+  --popover-foreground: oklch(0.92 0.006 95);
+  --primary: oklch(0.68 0.18 45);
+  --primary-foreground: oklch(0.15 0.02 255);
+  --secondary: oklch(0.25 0.015 255);
+  --secondary-foreground: oklch(0.9 0.006 95);
+  --muted: oklch(0.25 0.015 255);
+  --muted-foreground: oklch(0.65 0.015 255);
+  --accent: oklch(0.29 0.045 45);
+  --accent-foreground: oklch(0.85 0.06 60);
+  --destructive: oklch(0.62 0.2 25);
+  --destructive-foreground: oklch(0.97 0.01 90);
+  --border: oklch(0.29 0.015 255);
+  --input: oklch(0.25 0.015 255);
+  --ring: oklch(0.68 0.18 45);
+
+  --success: oklch(0.62 0.14 155);
+  --warning: oklch(0.72 0.15 80);
+  --info: oklch(0.62 0.13 250);
+  --surface: oklch(0.21 0.014 255);
+  --surface-2: oklch(0.25 0.015 255);
+
+  --sidebar: oklch(0.12 0.012 255);
+  --sidebar-foreground: oklch(0.88 0.008 95);
+  --sidebar-primary: oklch(0.68 0.18 45);
+  --sidebar-primary-foreground: oklch(0.12 0.012 255);
+  --sidebar-accent: oklch(0.2 0.02 255);
+  --sidebar-accent-foreground: oklch(0.95 0.006 95);
+  --sidebar-border: oklch(0.23 0.02 255);
+  --sidebar-ring: oklch(0.68 0.18 45);
+
+  --status-aberto: oklch(0.62 0.02 255);
+  --status-andamento: oklch(0.62 0.14 250);
+  --status-aguardando: oklch(0.74 0.15 80);
+  --status-concluido: oklch(0.62 0.14 155);
+  --status-entregue: oklch(0.6 0.015 255);
+  --status-cancelado: oklch(0.62 0.19 25);
+}
+
 /* Scrollbar customizada */
 ::-webkit-scrollbar {
   width: 8px;

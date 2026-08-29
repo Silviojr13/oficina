@@ -104,12 +104,12 @@ export default function OrdensServicoPage() {
           </Button>
         </div>
 
-        <div className="overflow-x-auto pb-2">
+        <div className="overflow-x-auto pb-2 snap-x snap-mandatory scroll-px-6">
           <div className="flex gap-4 min-w-max">
             {colunas.map((coluna) => {
               const ordensDaColuna = ordens.filter((o) => o.status === coluna.status);
               return (
-                <div key={coluna.status} className="w-[280px] flex-shrink-0">
+                <div key={coluna.status} className="w-[85vw] max-w-[280px] flex-shrink-0 snap-start">
                   <div className="flex items-center gap-2 mb-3 px-1">
                     <span className={cn('h-2 w-2 rounded-full', coluna.dotClass)} />
                     <h3 className="text-sm font-semibold">{coluna.label}</h3>

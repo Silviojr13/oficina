@@ -102,7 +102,7 @@ export default function ExpensesPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[720px]">
               <thead>
                 <tr className="border-b">
                   <th className="py-2 text-left">Descrição</th>
@@ -127,21 +127,24 @@ export default function ExpensesPage() {
                         {gasto.status.charAt(0).toUpperCase() + gasto.status.slice(1)}
                       </Badge>
                     </td>
-                    <td className="py-2 flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={gasto.status === 'pago'}
-                        onClick={() => marcarComoPago(gasto.id)}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" /> Pago
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4 mr-1" /> Editar
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => deleteGasto(gasto.id)}>
-                        <Trash2 className="h-4 w-4 mr-1" /> Excluir
-                      </Button>
+                    <td className="py-2">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          title="Marcar como pago"
+                          disabled={gasto.status === 'pago'}
+                          onClick={() => marcarComoPago(gasto.id)}
+                        >
+                          <CheckCircle className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Pago</span>
+                        </Button>
+                        <Button variant="outline" size="sm" title="Editar">
+                          <Edit className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Editar</span>
+                        </Button>
+                        <Button variant="outline" size="sm" title="Excluir" onClick={() => deleteGasto(gasto.id)}>
+                          <Trash2 className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Excluir</span>
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
