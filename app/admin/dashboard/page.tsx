@@ -1,36 +1,43 @@
 'use client'
 
-import { 
-  DollarSign, 
-  ShoppingCart, 
-  TrendingUp, 
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import {
+  DollarSign,
+  ShoppingCart,
+  TrendingUp,
   TrendingDown,
   Package,
   AlertTriangle,
   CreditCard,
   Percent,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Wrench,
+  Clock3,
+  PackageSearch,
+  CircleDollarSign,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AdminHeader } from '@/components/admin-header'
-import { 
-  dashboardKPIs, 
-  movimentacoesRecentes, 
-  vendasUltimos30Dias, 
-  topProdutosMes, 
+import { getOrdensServico } from '@/lib/actions/ordens-servico'
+import {
+  dashboardKPIs,
+  movimentacoesRecentes,
+  vendasUltimos30Dias,
+  topProdutosMes,
   vendasPorCategoria,
-  produtos 
+  produtos
 } from '@/lib/mock-data'
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -38,6 +45,16 @@ import {
   Pie,
   Cell
 } from 'recharts'
+
+const statusLabels: Record<string, string> = {
+  aberto: 'Aberta',
+  em_andamento: 'Em andamento',
+  aguardando_peca: 'Aguardando peça',
+  aguardando_aprovacao: 'Aguardando aprovação',
+  concluido: 'Concluída',
+  entregue: 'Entregue',
+  cancelado: 'Cancelada',
+}
 
 const kpiCards = [
   {
@@ -103,12 +120,115 @@ export default function DashboardPage() {
   // Produtos abaixo do estoque mínimo
   const produtosBaixoEstoque = produtos.filter(p => p.estoqueAtual <= p.estoqueMinimo && p.estoqueAtual > 0)
 
+  const [ordens, setOrdens] = useState<any[]>([])
+  useEffect(() => {
+    getOrdensServico(1, 1000).then((res) => setOrdens(res.data))
+  }, [])
+
+  const ordensAtivas = ordens.filter((o) => !['entregue', 'cancelado'].includes(o.status))
+  const aguardandoPeca = ordens.filter((o) => o.status === 'aguardando_peca').length
+  const concluidasHoje = ordens.filter((o) => o.status === 'concluido' || o.status === 'entregue').length
+  const valorEmAberto = ordensAtivas.reduce((sum, o) => sum + o.valorTotal, 0)
+  const ultimasAtivas = [...ordensAtivas]
+    .sort((a, b) => new Date(b.dataEntrada).getTime() - new Date(a.dataEntrada).getTime())
+    .slice(0, 5)
+
   return (
     <>
-      <AdminHeader title="Dashboard" subtitle="Visão geral do sistema" />
-      
+      <AdminHeader title="Dashboard" subtitle="Visão geral da oficina" />
+
       <main className="p-6 space-y-6">
-        {/* KPIs Principais */}
+        {/* Pátio da Oficina */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display text-lg font-bold uppercase flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-primary" /> Pátio da Oficina
+            </h2>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/ordens-servico">Ver quadro completo</Link>
+            </Button>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold">{ordensAtivas.length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Veículos no pátio</p>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Wrench className="h-5 w-5 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold text-status-aguardando">{aguardandoPeca}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Aguardando peça</p>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-status-aguardando/10 flex items-center justify-center">
+                  <PackageSearch className="h-5 w-5 text-status-aguardando" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold text-status-concluido">{concluidasHoje}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Prontas / entregues</p>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-status-concluido/10 flex items-center justify-center">
+                  <Clock3 className="h-5 w-5 text-status-concluido" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold">R$ {valorEmAberto.toFixed(2).replace('.', ',')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Valor em OS ativas</p>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <CircleDollarSign className="h-5 w-5 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {ultimasAtivas.length > 0 && (
+            <Card className="mt-4">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Últimas ordens abertas</CardTitle>
+                  <CardDescription>Veículos mais recentes em atendimento</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                {ultimasAtivas.map((ordem) => (
+                  <Link
+                    key={ordem.id}
+                    href={`/admin/ordens-servico/${ordem.id}/editar`}
+                    className="flex items-center justify-between py-2.5 px-2 -mx-2 rounded-lg border-b border-border last:border-0 hover:bg-muted transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="font-mono font-bold text-sm flex-shrink-0">{ordem.placa}</span>
+                      <span className="text-sm text-muted-foreground truncate">{ordem.clienteNome}</span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className="text-sm font-medium">R$ {ordem.valorTotal.toFixed(2).replace('.', ',')}</span>
+                      <Badge variant="outline">{statusLabels[ordem.status]}</Badge>
+                    </div>
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Loja & Estoque */}
+        <h2 className="font-display text-lg font-bold uppercase flex items-center gap-2 pt-2">
+          <Package className="h-5 w-5 text-primary" /> Loja &amp; Estoque
+        </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {kpiCards.map((kpi, index) => (
             <Card key={index}>

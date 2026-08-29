@@ -6,14 +6,14 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="theme-oficina min-h-screen bg-background text-foreground">
       {/* Sidebar - Desktop */}
       <div className="hidden lg:block">
         <AdminSidebar />
       </div>
-      
+
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-72">
         {children}
       </div>
     </div>

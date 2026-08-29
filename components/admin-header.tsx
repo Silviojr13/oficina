@@ -1,6 +1,7 @@
 'use client'
 
-import { Bell, Search, User, Menu } from 'lucide-react'
+import Link from 'next/link'
+import { Bell, Search, User, Menu, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -22,7 +23,7 @@ interface AdminHeaderProps {
 
 export function AdminHeader({ title, subtitle }: AdminHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-card px-6">
       {/* Mobile menu */}
       <Sheet>
         <SheetTrigger asChild>
@@ -30,15 +31,15 @@ export function AdminHeader({ title, subtitle }: AdminHeaderProps) {
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64">
+        <SheetContent side="left" className="p-0 w-72">
           <AdminSidebar />
         </SheetContent>
       </Sheet>
 
       {/* Title */}
-      <div className="flex-1">
-        <h1 className="font-display text-xl font-bold uppercase">{title}</h1>
-        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+      <div className="flex-1 min-w-0">
+        <h1 className="font-display text-xl font-bold uppercase leading-tight truncate">{title}</h1>
+        {subtitle && <p className="text-sm text-muted-foreground truncate">{subtitle}</p>}
       </div>
 
       {/* Search */}
@@ -47,14 +48,20 @@ export function AdminHeader({ title, subtitle }: AdminHeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar..."
-            className="pl-10 bg-secondary"
+            placeholder="Buscar placa, cliente, produto..."
+            className="pl-10 bg-muted border-transparent"
           />
         </div>
       </div>
 
       {/* Actions */}
       <div className="flex items-center gap-2">
+        <Button asChild size="sm" className="hidden sm:inline-flex">
+          <Link href="/admin/ordens-servico/nova">
+            <Plus className="h-4 w-4 mr-1.5" /> Nova OS
+          </Link>
+        </Button>
+
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

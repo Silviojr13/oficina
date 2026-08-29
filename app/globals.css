@@ -45,6 +45,13 @@
   --info: oklch(0.60 0.15 250);
   --surface: oklch(0.12 0 0);
   --surface-2: oklch(0.16 0 0);
+
+  --status-aberto: oklch(0.65 0 0);
+  --status-andamento: oklch(0.60 0.15 250);
+  --status-aguardando: oklch(0.75 0.18 85);
+  --status-concluido: oklch(0.65 0.18 145);
+  --status-entregue: oklch(0.55 0 0);
+  --status-cancelado: oklch(0.55 0.20 25);
 }
 
 @theme inline {
@@ -92,6 +99,12 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-status-aberto: var(--status-aberto);
+  --color-status-andamento: var(--status-andamento);
+  --color-status-aguardando: var(--status-aguardando);
+  --color-status-concluido: var(--status-concluido);
+  --color-status-entregue: var(--status-entregue);
+  --color-status-cancelado: var(--status-cancelado);
 }
 
 @layer base {
@@ -101,6 +114,62 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ============================================================
+   Tema "Bancada" — visual dedicado ao painel de gestão da oficina
+   (mecânica + elétrica). Escopado em .theme-oficina para não afetar
+   a loja pública, que mantém o tema industrial escuro acima.
+   Claro, confortável para uso prolongado, com o mesmo acento laranja
+   da marca recalibrado para fundo claro.
+   ============================================================ */
+.theme-oficina {
+  --background: oklch(0.975 0.004 95);
+  --foreground: oklch(0.24 0.025 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.025 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.025 255);
+  --primary: oklch(0.62 0.19 45);
+  --primary-foreground: oklch(0.99 0.01 90);
+  --secondary: oklch(0.95 0.008 95);
+  --secondary-foreground: oklch(0.28 0.03 255);
+  --muted: oklch(0.95 0.008 95);
+  --muted-foreground: oklch(0.5 0.02 255);
+  --accent: oklch(0.93 0.03 60);
+  --accent-foreground: oklch(0.32 0.06 45);
+  --destructive: oklch(0.58 0.20 25);
+  --destructive-foreground: oklch(0.99 0.01 90);
+  --border: oklch(0.9 0.008 95);
+  --input: oklch(0.9 0.008 95);
+  --ring: oklch(0.62 0.19 45);
+  --radius: 0.65rem;
+
+  --success: oklch(0.6 0.14 155);
+  --warning: oklch(0.72 0.15 80);
+  --info: oklch(0.58 0.13 250);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.96 0.008 95);
+
+  --sidebar: oklch(0.22 0.025 255);
+  --sidebar-foreground: oklch(0.9 0.01 95);
+  --sidebar-primary: oklch(0.68 0.18 45);
+  --sidebar-primary-foreground: oklch(0.15 0.02 255);
+  --sidebar-accent: oklch(0.29 0.03 255);
+  --sidebar-accent-foreground: oklch(0.97 0.005 95);
+  --sidebar-border: oklch(0.3 0.03 255);
+  --sidebar-ring: oklch(0.68 0.18 45);
+
+  /* Status de pátio (ordens de serviço) */
+  --status-aberto: oklch(0.55 0.03 255);
+  --status-andamento: oklch(0.58 0.15 250);
+  --status-aguardando: oklch(0.72 0.15 80);
+  --status-concluido: oklch(0.6 0.14 155);
+  --status-entregue: oklch(0.6 0.02 255);
+  --status-cancelado: oklch(0.58 0.2 25);
+
+  background: var(--background);
+  color: var(--foreground);
 }
 
 /* Scrollbar customizada */
