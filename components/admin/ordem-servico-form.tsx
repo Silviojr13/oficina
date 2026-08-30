@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Produto } from '@/lib/types';
+import { optionalNumber } from '@/lib/zod-helpers';
 
 const statusLabels: Record<string, string> = {
   aberto: 'Aberta',
@@ -27,7 +28,9 @@ const ordemServicoSchema = z.object({
   placa: z.string().min(1, 'Placa é obrigatória'),
   veiculoMarca: z.string().optional(),
   veiculoModelo: z.string().optional(),
-  veiculoAno: z.number().int().optional(),
+  // optionalNumber() porque um input numerico vazio vira NaN via valueAsNumber
+  // (nao undefined), e z.number().optional() sozinho rejeita NaN.
+  veiculoAno: optionalNumber(z.number().int().optional()),
   veiculoCor: z.string().optional(),
   kmEntrada: z.number().int().nonnegative('Km deve ser zero ou positivo'),
   clienteNome: z.string().min(1, 'Nome do cliente é obrigatório'),
@@ -41,9 +44,9 @@ const ordemServicoSchema = z.object({
   codigoFalha: z.string().optional(),
   sistemaAfetado: z.string().optional(),
   status: z.enum(['aberto', 'em_andamento', 'aguardando_peca', 'aguardando_aprovacao', 'concluido', 'entregue', 'cancelado']),
-  desconto: z.number().nonnegative().optional(),
+  desconto: optionalNumber(z.number().nonnegative().optional()),
   formaPagamento: z.string().optional(),
-  garantiaDias: z.number().int().nonnegative().optional(),
+  garantiaDias: optionalNumber(z.number().int().nonnegative().optional()),
   observacoes: z.string().optional(),
 });
 

@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import { Fornecedor } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { optionalNumber } from '@/lib/zod-helpers';
 
 // Definição do esquema de validação com Zod
 const fornecedorSchema = z.object({
@@ -19,7 +20,9 @@ const fornecedorSchema = z.object({
   inscricaoEstadual: z.string().optional(),
   contato: z.string().optional(),
   telefone: z.string().optional(),
-  email: z.string().email("Email inválido").optional(),
+  // .optional() so cobre undefined - o input deixa "" quando vazio, que
+  // .email() rejeitava e bloqueava o formulario com um "Email invalido" falso.
+  email: z.string().email("Email inválido").optional().or(z.literal('')),
   endereco: z.object({
     logradouro: z.string().min(1, "Logradouro é obrigatório"),
     numero: z.string().min(1, "Número é obrigatório"),
@@ -36,8 +39,8 @@ const fornecedorSchema = z.object({
     tipoConta: z.enum(['Corrente', 'Poupança']),
   }),
   condicaoPagamentoPadrao: z.string().optional(),
-  prazoEntrega: z.number().int().positive("Prazo deve ser positivo").optional(),
-  avaliacao: z.number().min(1, "Avaliação mínima é 1").max(5, "Avaliação máxima é 5").optional(),
+  prazoEntrega: optionalNumber(z.number().int().positive("Prazo deve ser positivo").optional()),
+  avaliacao: optionalNumber(z.number().min(1, "Avaliação mínima é 1").max(5, "Avaliação máxima é 5").optional()),
   observacoes: z.string().optional(),
 });
 
