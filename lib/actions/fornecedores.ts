@@ -152,6 +152,15 @@ export async function deleteFornecedor(id: string) {
     return { success: true };
   } catch (error) {
     console.error('Erro ao deletar fornecedor:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
+
+    const mensagemOriginal = error instanceof Error ? error.message : 'Erro desconhecido';
+    if (mensagemOriginal.includes('FOREIGN KEY constraint failed')) {
+      return {
+        success: false,
+        error: 'Este fornecedor já possui entradas de estoque (compras) registradas e não pode ser excluído.',
+      };
+    }
+
+    return { success: false, error: mensagemOriginal };
   }
 }

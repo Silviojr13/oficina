@@ -249,6 +249,18 @@ export async function deleteProduto(id: string) {
     return { success: true };
   } catch (error) {
     console.error('Erro ao deletar produto:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
+
+    // SQLite/Turso recusa o delete com "FOREIGN KEY constraint failed" quando o
+    // produto ja foi usado em uma venda, compra ou ordem de servico - historico
+    // que nao pode ser apagado. Traduz pra uma mensagem que o usuario entenda.
+    const mensagemOriginal = error instanceof Error ? error.message : 'Erro desconhecido';
+    if (mensagemOriginal.includes('FOREIGN KEY constraint failed')) {
+      return {
+        success: false,
+        error: 'Este produto já foi usado em vendas, compras ou ordens de serviço e não pode ser excluído. Desmarque "Exibir no Site" para desativá-lo em vez de excluir.',
+      };
+    }
+
+    return { success: false, error: mensagemOriginal };
   }
 }

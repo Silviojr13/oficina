@@ -158,7 +158,7 @@ model VeiculoCompativel {
   anoFinal    Int?
   posicao     String
   observacao  String?
-  produto     Produto @relation(fields: [produtoId], references: [id])
+  produto     Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
 
   @@index([produtoId])
 }
