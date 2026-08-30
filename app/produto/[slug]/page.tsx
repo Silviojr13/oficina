@@ -104,10 +104,19 @@ export default function ProdutoPage({ params }: PageProps) {
           <div className="grid lg:grid-cols-2 gap-8 mb-12">
             {/* Imagem */}
             <div className="relative">
-              <div className="aspect-square bg-card rounded-lg border border-border flex items-center justify-center">
-                <Package className="h-32 w-32 text-muted-foreground/30" />
+              <div className="aspect-square bg-card rounded-lg border border-border overflow-hidden flex items-center justify-center">
+                {produto.imagemPrincipal ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={produto.imagemPrincipal}
+                    alt={produto.nome}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Package className="h-32 w-32 text-muted-foreground/30" />
+                )}
               </div>
-              
+
               {/* Badges */}
               <div className="absolute top-4 left-4 flex flex-col gap-2">
                 {temPromocao && (

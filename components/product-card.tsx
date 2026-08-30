@@ -40,11 +40,19 @@ export function ProductCard({ produto, className }: ProductCardProps) {
     <Card className={cn("group overflow-hidden bg-card border-border hover:border-primary/50 transition-colors", className)}>
       <Link href={`/produto/${produto.slug}`}>
         <div className="relative aspect-square bg-secondary/50 overflow-hidden">
-          {/* Placeholder de imagem */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Package className="h-16 w-16 text-muted-foreground/30" />
-          </div>
-          
+          {produto.imagemPrincipal ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={produto.imagemPrincipal}
+              alt={produto.nome}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Package className="h-16 w-16 text-muted-foreground/30" />
+            </div>
+          )}
+
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
             {temPromocao && (
