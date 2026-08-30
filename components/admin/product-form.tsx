@@ -120,9 +120,15 @@ export default function ProductForm({ initialData, onSubmit, isEditing, forneced
       controlaEstoque: initialData?.controlaEstoque ?? true,
       permiteVendaSemEstoque: initialData?.permiteVendaSemEstoque ?? false,
       veiculosCompativeis: initialData?.veiculosCompativeis ?? [],
-      // Handle nullable dates
-      dataInicioPromocao: initialData?.dataInicioPromocao || undefined,
-      dataFimPromocao: initialData?.dataFimPromocao || undefined,
+      // O Prisma devolve Date, mas o schema espera string (YYYY-MM-DD) -
+      // sem essa conversao a validacao falha silenciosamente ao editar
+      // um produto que já tem essas datas preenchidas.
+      dataInicioPromocao: initialData?.dataInicioPromocao
+        ? new Date(initialData.dataInicioPromocao).toISOString().slice(0, 10)
+        : undefined,
+      dataFimPromocao: initialData?.dataFimPromocao
+        ? new Date(initialData.dataFimPromocao).toISOString().slice(0, 10)
+        : undefined,
       precoPromocional: initialData?.precoPromocional ?? null,
     },
   });

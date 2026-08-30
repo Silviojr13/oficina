@@ -51,6 +51,11 @@ export default function FuncionarioForm({ initialData, onSubmit, isEditing }: Fu
       // Ensure numbers are handled correctly if undefined
       salario: initialData?.salario ?? 0,
       comissaoPercentual: initialData?.comissaoPercentual ?? 0,
+      // O Prisma devolve Date, mas o schema espera string (YYYY-MM-DD) -
+      // sem essa conversao a validacao falha silenciosamente ao editar.
+      dataAdmissao: initialData?.dataAdmissao
+        ? new Date(initialData.dataAdmissao).toISOString().slice(0, 10)
+        : undefined,
     },
   });
 
