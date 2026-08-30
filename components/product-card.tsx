@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { useCartStore } from '@/lib/store'
 import type { Produto } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { useToast } from '@/components/ui/use-toast' // Importing useToast
+import { toast } from 'sonner'
 
 interface ProductCardProps {
   produto: Produto
@@ -17,8 +17,7 @@ interface ProductCardProps {
 
 export function ProductCard({ produto, className }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem)
-  const { toast } = useToast();
-  
+
   const precoAtual = produto.precoPromocional || produto.precoSite
   const temPromocao = produto.precoPromocional && produto.precoPromocional < produto.precoSite
   const desconto = temPromocao 
@@ -30,8 +29,7 @@ export function ProductCard({ produto, className }: ProductCardProps) {
 
   const comprarProduto = () => {
     addItem(produto);
-    toast({
-      title: "Adicionado ao carrinho!",
+    toast.success('Adicionado ao carrinho!', {
       description: `${produto.nome} foi adicionado ao seu carrinho.`,
     });
   };
