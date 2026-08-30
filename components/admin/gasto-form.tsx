@@ -43,6 +43,11 @@ export default function GastoForm({ initialData, onSubmit, isEditing }: GastoFor
     defaultValues: {
       ...initialData,
       recorrente: initialData?.recorrente ?? false, // Default to false
+      // O Prisma devolve Date, mas o schema espera string (YYYY-MM-DD) -
+      // sem essa conversao a validacao falha silenciosamente ao editar.
+      dataVencimento: initialData?.dataVencimento
+        ? new Date(initialData.dataVencimento).toISOString().slice(0, 10)
+        : undefined,
     },
   });
 
