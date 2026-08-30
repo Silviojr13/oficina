@@ -55,8 +55,8 @@ const produtoSchema = z.object({
   material: z.string().optional(),
   cor: z.string().optional(),
   garantia: z.string().optional(),
-  fichaTecnicaUrl: z.string().url("URL inválida").optional().or(z.literal('')),
-  manualUrl: z.string().url("URL inválida").optional().or(z.literal('')),
+  fichaTecnicaUrl: z.string().optional().or(z.literal('')),
+  manualUrl: z.string().optional().or(z.literal('')),
   custoAquisicao: z.number().positive("Custo deve ser positivo").optional(),
   freteEntrada: z.number().nonnegative("Frete deve ser positivo").optional(),
   impostosEntrada: z.number().nonnegative("Impostos devem ser positivos").optional(),
@@ -86,11 +86,15 @@ const produtoSchema = z.object({
   fornecedorPadraoId: z.string().optional(),
   prazoReposicao: z.number().positive("Prazo deve ser positivo").optional(),
   fotos: z.array(z.string()).optional(),
-  imagemPrincipal: z.string().url("URL inválida").optional().or(z.literal('')),
+  // Aceita tanto URL absoluta (https://...) quanto caminho relativo (/produtos/x.jpg,
+  // como os produtos existentes ja gravam) - z.string().url() rejeitava caminhos
+  // relativos e travava a validacao silenciosamente, pois este campo nao tem
+  // <span> de erro visivel na tela.
+  imagemPrincipal: z.string().optional().or(z.literal('')),
   descricaoCurta: z.string().optional(),
   descricaoCompleta: z.string().optional(),
   caracteristicas: z.array(z.string()).optional(),
-  videoUrl: z.string().url("URL inválida").optional().or(z.literal('')),
+  videoUrl: z.string().optional().or(z.literal('')),
 });
 
 type ProdutoFormData = z.infer<typeof produtoSchema>;
@@ -442,6 +446,7 @@ export default function ProductForm({ initialData, onSubmit, isEditing, forneced
               <div>
                 <Label htmlFor="imagemPrincipal">URL da Imagem Principal</Label>
                 <Input id="imagemPrincipal" {...register('imagemPrincipal')} />
+                {errors.imagemPrincipal && <span className="text-destructive text-sm">{errors.imagemPrincipal.message}</span>}
               </div>
               <div>
                 <Label htmlFor="descricaoCompleta">Descrição Completa</Label>
