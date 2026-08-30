@@ -11,7 +11,7 @@ import { useForm } from 'react-hook-form';
 import { Funcionario } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { optionalNumber } from '@/lib/zod-helpers';
+import { optionalNumber, nullsToUndefined, avisarErroValidacao } from '@/lib/zod-helpers';
 
 // Definição do esquema de validação com Zod
 const funcionarioSchema = z.object({
@@ -50,7 +50,9 @@ export default function FuncionarioForm({ initialData, onSubmit, isEditing }: Fu
   } = useForm<FuncionarioFormData>({
     resolver: zodResolver(funcionarioSchema),
     defaultValues: {
-      ...initialData,
+      // Colunas vazias no banco vem como null, e .optional() no zod so aceita
+      // undefined - null trava a validacao calada.
+      ...nullsToUndefined(initialData),
       // Ensure numbers are handled correctly if undefined
       salario: initialData?.salario ?? 0,
       comissaoPercentual: initialData?.comissaoPercentual ?? 0,
@@ -67,7 +69,7 @@ export default function FuncionarioForm({ initialData, onSubmit, isEditing }: Fu
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit, avisarErroValidacao)} className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>{isEditing ? 'Editar Funcionário' : 'Novo Funcionário'}</CardTitle>

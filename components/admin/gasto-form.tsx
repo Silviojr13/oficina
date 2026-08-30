@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { Gasto } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { nullsToUndefined, avisarErroValidacao } from '@/lib/zod-helpers';
 
 // Definição do esquema de validação com Zod
 const gastoSchema = z.object({
@@ -41,7 +42,9 @@ export default function GastoForm({ initialData, onSubmit, isEditing }: GastoFor
   } = useForm<GastoFormData>({
     resolver: zodResolver(gastoSchema),
     defaultValues: {
-      ...initialData,
+      // Colunas vazias no banco vem como null, e .optional() no zod so aceita
+      // undefined - null trava a validacao calada.
+      ...nullsToUndefined(initialData),
       recorrente: initialData?.recorrente ?? false, // Default to false
       // O Prisma devolve Date, mas o schema espera string (YYYY-MM-DD) -
       // sem essa conversao a validacao falha silenciosamente ao editar.
@@ -56,7 +59,7 @@ export default function GastoForm({ initialData, onSubmit, isEditing }: GastoFor
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit, avisarErroValidacao)} className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>{isEditing ? 'Editar Gasto' : 'Novo Gasto'}</CardTitle>

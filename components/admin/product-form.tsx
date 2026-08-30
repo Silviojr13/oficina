@@ -14,7 +14,7 @@ import { categorias, marcas, montadoras } from '@/lib/constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useEffect, useState } from 'react'; // Added useState
-import { optionalNumber } from '@/lib/zod-helpers';
+import { optionalNumber, nullsToUndefined, avisarErroValidacao } from '@/lib/zod-helpers';
 
 // Definição do esquema de validação com Zod
 const produtoSchema = z.object({
@@ -122,7 +122,11 @@ export default function ProductForm({ initialData, onSubmit, isEditing, forneced
   } = useForm<ProdutoFormData>({
     resolver: zodResolver(produtoSchema),
     defaultValues: {
-      ...initialData,
+      // Colunas vazias no banco vem como null, e .optional() no zod so aceita
+      // undefined - null trava a validacao calada em qualquer campo opcional,
+      // principalmente os que nem tem input renderizado (referenciaCruzada,
+      // codigoBarras, ncm, pesos/dimensoes, fichaTecnicaUrl etc.).
+      ...nullsToUndefined(initialData),
       // Ensure booleans are handled correctly if undefined
       exibirNoSite: initialData?.exibirNoSite ?? false,
       destaqueHome: initialData?.destaqueHome ?? false,
@@ -204,7 +208,7 @@ export default function ProductForm({ initialData, onSubmit, isEditing, forneced
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit, avisarErroValidacao)} className="space-y-6">
       <Tabs defaultValue="geral" className="w-full">
         <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-5">
           <TabsTrigger value="geral">Geral</TabsTrigger>
