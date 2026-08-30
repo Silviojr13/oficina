@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Produto } from '@/lib/types';
+import { avisarErroValidacao } from '@/lib/zod-helpers';
 
 const tipoEntradaLabels: Record<string, string> = {
   compra: 'Compra',
@@ -105,7 +106,7 @@ export default function EntradaEstoqueForm({ produtos, fornecedores, initialData
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit, avisarErroValidacao)} className="space-y-6">
       <Card>
         <CardHeader><CardTitle>Nota Fiscal</CardTitle></CardHeader>
         <CardContent className="space-y-4">

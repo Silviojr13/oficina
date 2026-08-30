@@ -10,7 +10,7 @@ import { useForm } from 'react-hook-form';
 import { Fornecedor } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { optionalNumber } from '@/lib/zod-helpers';
+import { optionalNumber, nullsToUndefined, avisarErroValidacao } from '@/lib/zod-helpers';
 
 // Definição do esquema de validação com Zod
 const fornecedorSchema = z.object({
@@ -62,7 +62,9 @@ export default function FornecedorForm({ initialData, onSubmit, isEditing }: For
   } = useForm<FornecedorFormData>({
     resolver: zodResolver(fornecedorSchema),
     defaultValues: {
-      ...initialData,
+      // Colunas vazias no banco vem como null, e .optional() no zod so aceita
+      // undefined - null trava a validacao calada.
+      ...nullsToUndefined(initialData),
       endereco: {
         logradouro: initialData?.endereco?.logradouro || '',
         numero: initialData?.endereco?.numero || '',
@@ -88,7 +90,7 @@ export default function FornecedorForm({ initialData, onSubmit, isEditing }: For
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit, avisarErroValidacao)} className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>{isEditing ? 'Editar Fornecedor' : 'Novo Fornecedor'}</CardTitle>

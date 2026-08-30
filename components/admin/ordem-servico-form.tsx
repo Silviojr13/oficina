@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Produto } from '@/lib/types';
-import { optionalNumber } from '@/lib/zod-helpers';
+import { optionalNumber, avisarErroValidacao } from '@/lib/zod-helpers';
 
 const statusLabels: Record<string, string> = {
   aberto: 'Aberta',
@@ -162,7 +162,7 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit, avisarErroValidacao)} className="space-y-6">
       <Card>
         <CardHeader><CardTitle>Veículo</CardTitle></CardHeader>
         <CardContent className="space-y-4">
