@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { Funcionario } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { optionalNumber } from '@/lib/zod-helpers';
 
 // Definição do esquema de validação com Zod
 const funcionarioSchema = z.object({
@@ -19,10 +20,12 @@ const funcionarioSchema = z.object({
   cargo: z.string().min(1, "Cargo é obrigatório"),
   setor: z.string().min(1, "Setor é obrigatório"),
   telefone: z.string().optional(),
-  email: z.string().email("Email inválido").optional(),
+  // .optional() so cobre undefined - o input deixa "" quando vazio, que
+  // .email() rejeitava e bloqueava o formulario com um "Email invalido" falso.
+  email: z.string().email("Email inválido").optional().or(z.literal('')),
   dataAdmissao: z.string().min(1, "Data de admissão é obrigatória"), // Assuming date format like YYYY-MM-DD
-  salario: z.number().positive("Salário deve ser positivo").optional(),
-  comissaoPercentual: z.number().nonnegative("Comissão deve ser zero ou positiva").optional(),
+  salario: optionalNumber(z.number().positive("Salário deve ser positivo").optional()),
+  comissaoPercentual: optionalNumber(z.number().nonnegative("Comissão deve ser zero ou positiva").optional()),
   tipoContrato: z.enum(['clt', 'pj', 'estagio', 'temporario']).default('clt'),
   status: z.enum(['ativo', 'ferias', 'afastado', 'inativo']).default('ativo'),
   endereco: z.string().optional(),

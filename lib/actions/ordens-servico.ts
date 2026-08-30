@@ -77,13 +77,25 @@ export async function createOrdemServico(data: any) {
       itens: data.itens?.length ? { create: data.itens } : undefined,
     };
 
-    const ordem = await prisma.ordemServico.create({
-      data: ordemData,
-      include: { itens: { include: { produto: true } } },
-    });
+    // As pecas usadas na OS saem do estoque - sem isso "Estoque Atual" fica
+    // descolado da realidade a cada ordem de servico com pecas.
+    const [ordem] = await prisma.$transaction([
+      prisma.ordemServico.create({
+        data: ordemData,
+        include: { itens: { include: { produto: true } } },
+      }),
+      ...(data.itens ?? []).map((item: any) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { decrement: item.quantidade } },
+        })
+      ),
+    ]);
 
     revalidatePath('/admin/ordens-servico');
     revalidatePath('/admin/ordens-servico/nova');
+    revalidatePath('/admin/produtos');
+    revalidatePath('/admin/estoque');
 
     return { success: true, data: parseServicos(ordem) };
   } catch (error) {
@@ -104,14 +116,37 @@ export async function updateOrdemServico(id: string, data: any) {
         : {}),
     };
 
-    const ordem = await prisma.ordemServico.update({
-      where: { id },
-      data: ordemData,
-      include: { itens: { include: { produto: true } } },
-    });
+    // Se a lista de pecas foi enviada, repoe o estoque das pecas antigas e
+    // da baixa nas novas - senao os ajustes de uma OS editada nunca refletem
+    // no estoque.
+    const itensAnteriores = data.itens
+      ? (await prisma.ordemServico.findUnique({ where: { id }, select: { itens: true } }))?.itens ?? []
+      : [];
+
+    const [ordem] = await prisma.$transaction([
+      prisma.ordemServico.update({
+        where: { id },
+        data: ordemData,
+        include: { itens: { include: { produto: true } } },
+      }),
+      ...itensAnteriores.map((item) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { increment: item.quantidade } },
+        })
+      ),
+      ...(data.itens ?? []).map((item: any) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { decrement: item.quantidade } },
+        })
+      ),
+    ]);
 
     revalidatePath(`/admin/ordens-servico/${id}`);
     revalidatePath('/admin/ordens-servico');
+    revalidatePath('/admin/produtos');
+    revalidatePath('/admin/estoque');
 
     return { success: true, data: parseServicos(ordem) };
   } catch (error) {
@@ -136,8 +171,26 @@ export async function atualizarStatusOrdemServico(id: string, status: string) {
 
 export async function deleteOrdemServico(id: string) {
   try {
-    await prisma.ordemServico.delete({ where: { id } });
+    const ordem = await prisma.ordemServico.findUnique({ where: { id }, include: { itens: true } });
+    if (!ordem) {
+      return { success: false, error: 'Ordem de serviço não encontrada' };
+    }
+
+    // Cancelar a OS tem que devolver as pecas usadas ao estoque.
+    await prisma.$transaction([
+      prisma.ordemServico.delete({ where: { id } }),
+      ...ordem.itens.map((item) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { increment: item.quantidade } },
+        })
+      ),
+    ]);
+
     revalidatePath('/admin/ordens-servico');
+    revalidatePath('/admin/produtos');
+    revalidatePath('/admin/estoque');
+
     return { success: true };
   } catch (error) {
     console.error('Erro ao deletar ordem de serviço:', error);

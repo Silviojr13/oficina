@@ -14,6 +14,7 @@ import { categorias, marcas, montadoras } from '@/lib/constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useEffect, useState } from 'react'; // Added useState
+import { optionalNumber } from '@/lib/zod-helpers';
 
 // Definição do esquema de validação com Zod
 const produtoSchema = z.object({
@@ -45,46 +46,50 @@ const produtoSchema = z.object({
   tags: z.array(z.string()).optional(),
   localizacaoEstoque: z.string().optional(),
   setorAlmoxarifado: z.string().optional(),
-  pesoBruto: z.number().nonnegative("Peso deve ser positivo").optional(),
-  pesoLiquido: z.number().nonnegative("Peso deve ser positivo").optional(),
-  comprimento: z.number().nonnegative("Dimensão deve ser positiva").optional(),
-  largura: z.number().nonnegative("Dimensão deve ser positiva").optional(),
-  altura: z.number().nonnegative("Dimensão deve ser positiva").optional(),
+  pesoBruto: optionalNumber(z.number().nonnegative("Peso deve ser positivo").optional()),
+  pesoLiquido: optionalNumber(z.number().nonnegative("Peso deve ser positivo").optional()),
+  comprimento: optionalNumber(z.number().nonnegative("Dimensão deve ser positiva").optional()),
+  largura: optionalNumber(z.number().nonnegative("Dimensão deve ser positiva").optional()),
+  altura: optionalNumber(z.number().nonnegative("Dimensão deve ser positiva").optional()),
   unidadeMedida: z.string().optional(),
-  conteudoEmbalagem: z.number().int().positive("Quantidade deve ser positiva").optional(),
+  conteudoEmbalagem: optionalNumber(z.number().int().positive("Quantidade deve ser positiva").optional()),
   material: z.string().optional(),
   cor: z.string().optional(),
   garantia: z.string().optional(),
   fichaTecnicaUrl: z.string().optional().or(z.literal('')),
   manualUrl: z.string().optional().or(z.literal('')),
-  custoAquisicao: z.number().positive("Custo deve ser positivo").optional(),
-  freteEntrada: z.number().nonnegative("Frete deve ser positivo").optional(),
-  impostosEntrada: z.number().nonnegative("Impostos devem ser positivos").optional(),
-  margemLucro: z.number().nonnegative("Margem deve ser positiva").optional(),
-  precoVendaSugerido: z.number().positive("Preço deve ser positivo").optional(),
-  precoVendaBalcao: z.number().positive("Preço deve ser positivo").optional(),
-  precoB2B: z.number().positive("Preço deve ser positivo").optional(),
-  precoMinimo: z.number().nonnegative("Preço deve ser positivo").optional(),
-  descontoMaximo: z.number().nonnegative("Desconto deve ser positivo").optional(),
-  precoSite: z.number().positive("Preço no site deve ser positivo").optional(),
-  precoPromocional: z.number().positive("Preço promocional deve ser positivo").nullable().optional(),
+  // Campos numericos opcionais usam optionalNumber() porque um <input type="number">
+  // vazio vira NaN via valueAsNumber (nao undefined) - e z.number().optional() sozinho
+  // rejeita NaN, travando a validacao do formulario inteiro mesmo sem nenhum erro
+  // visivel nesses campos (a maioria nao tem <span> de erro renderizado).
+  custoAquisicao: optionalNumber(z.number().positive("Custo deve ser positivo").optional()),
+  freteEntrada: optionalNumber(z.number().nonnegative("Frete deve ser positivo").optional()),
+  impostosEntrada: optionalNumber(z.number().nonnegative("Impostos devem ser positivos").optional()),
+  margemLucro: optionalNumber(z.number().nonnegative("Margem deve ser positiva").optional()),
+  precoVendaSugerido: optionalNumber(z.number().positive("Preço deve ser positivo").optional()),
+  precoVendaBalcao: optionalNumber(z.number().positive("Preço deve ser positivo").optional()),
+  precoB2B: optionalNumber(z.number().positive("Preço deve ser positivo").optional()),
+  precoMinimo: optionalNumber(z.number().nonnegative("Preço deve ser positivo").optional()),
+  descontoMaximo: optionalNumber(z.number().nonnegative("Desconto deve ser positivo").optional()),
+  precoSite: optionalNumber(z.number().positive("Preço no site deve ser positivo").optional()),
+  precoPromocional: optionalNumber(z.number().positive("Preço promocional deve ser positivo").nullable().optional()),
   dataInicioPromocao: z.string().optional(), // Can be date string
   dataFimPromocao: z.string().optional(), // Can be date string
   exibirNoSite: z.boolean().optional(),
   destaqueHome: z.boolean().optional(),
-  aliquotaICMS: z.number().nonnegative("Alíquota deve ser positiva").optional(),
-  aliquotaIPI: z.number().nonnegative("Alíquota deve ser positiva").optional(),
+  aliquotaICMS: optionalNumber(z.number().nonnegative("Alíquota deve ser positiva").optional()),
+  aliquotaIPI: optionalNumber(z.number().nonnegative("Alíquota deve ser positiva").optional()),
   cstCsosn: z.string().optional(),
-  pisCofins: z.number().nonnegative("Valor deve ser positivo").optional(),
+  pisCofins: optionalNumber(z.number().nonnegative("Valor deve ser positivo").optional()),
   regimeTributacao: z.string().optional(),
-  estoqueAtual: z.number().int().nonnegative("Estoque deve ser zero ou positivo").optional(),
-  estoqueMinimo: z.number().int().nonnegative("Estoque deve ser zero ou positivo").optional(),
-  estoqueMaximo: z.number().int().nonnegative("Estoque deve ser zero ou positivo").optional(),
-  estoqueSeguranca: z.number().int().nonnegative("Estoque deve ser zero ou positivo").optional(),
+  estoqueAtual: optionalNumber(z.number().int().nonnegative("Estoque deve ser zero ou positivo").optional()),
+  estoqueMinimo: optionalNumber(z.number().int().nonnegative("Estoque deve ser zero ou positivo").optional()),
+  estoqueMaximo: optionalNumber(z.number().int().nonnegative("Estoque deve ser zero ou positivo").optional()),
+  estoqueSeguranca: optionalNumber(z.number().int().nonnegative("Estoque deve ser zero ou positivo").optional()),
   controlaEstoque: z.boolean().optional(),
   permiteVendaSemEstoque: z.boolean().optional(),
   fornecedorPadraoId: z.string().optional(),
-  prazoReposicao: z.number().positive("Prazo deve ser positivo").optional(),
+  prazoReposicao: optionalNumber(z.number().positive("Prazo deve ser positivo").optional()),
   fotos: z.array(z.string()).optional(),
   // Aceita tanto URL absoluta (https://...) quanto caminho relativo (/produtos/x.jpg,
   // como os produtos existentes ja gravam) - z.string().url() rejeitava caminhos
@@ -363,10 +368,12 @@ export default function ProductForm({ initialData, onSubmit, isEditing, forneced
                 <div>
                   <Label htmlFor="custoAquisicao">Custo de Aquisição</Label>
                   <Input id="custoAquisicao" type="number" step="0.01" {...register('custoAquisicao', { valueAsNumber: true })} />
+                  {errors.custoAquisicao && <span className="text-destructive text-sm">{errors.custoAquisicao.message}</span>}
                 </div>
                 <div>
                   <Label htmlFor="margemLucro">Margem de Lucro (%)</Label>
                   <Input id="margemLucro" type="number" step="0.01" {...register('margemLucro', { valueAsNumber: true })} />
+                  {errors.margemLucro && <span className="text-destructive text-sm">{errors.margemLucro.message}</span>}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -378,16 +385,19 @@ export default function ProductForm({ initialData, onSubmit, isEditing, forneced
                 <div>
                   <Label htmlFor="precoPromocional">Preço Promocional</Label>
                   <Input id="precoPromocional" type="number" step="0.01" {...register('precoPromocional', { valueAsNumber: true })} />
+                  {errors.precoPromocional && <span className="text-destructive text-sm">{errors.precoPromocional.message}</span>}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="aliquotaICMS">Alíquota ICMS (%)</Label>
                   <Input id="aliquotaICMS" type="number" step="0.01" {...register('aliquotaICMS', { valueAsNumber: true })} />
+                  {errors.aliquotaICMS && <span className="text-destructive text-sm">{errors.aliquotaICMS.message}</span>}
                 </div>
                 <div>
                   <Label htmlFor="aliquotaIPI">Alíquota IPI (%)</Label>
                   <Input id="aliquotaIPI" type="number" step="0.01" {...register('aliquotaIPI', { valueAsNumber: true })} />
+                  {errors.aliquotaIPI && <span className="text-destructive text-sm">{errors.aliquotaIPI.message}</span>}
                 </div>
               </div>
             </CardContent>
@@ -404,10 +414,12 @@ export default function ProductForm({ initialData, onSubmit, isEditing, forneced
                 <div>
                   <Label htmlFor="estoqueAtual">Estoque Atual</Label>
                   <Input id="estoqueAtual" type="number" {...register('estoqueAtual', { valueAsNumber: true })} />
+                  {errors.estoqueAtual && <span className="text-destructive text-sm">{errors.estoqueAtual.message}</span>}
                 </div>
                 <div>
                   <Label htmlFor="estoqueMinimo">Estoque Mínimo</Label>
                   <Input id="estoqueMinimo" type="number" {...register('estoqueMinimo', { valueAsNumber: true })} />
+                  {errors.estoqueMinimo && <span className="text-destructive text-sm">{errors.estoqueMinimo.message}</span>}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

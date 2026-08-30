@@ -80,20 +80,33 @@ export async function createEntradaEstoque(data: any) {
       },
     };
 
-    const entrada = await prisma.entradaEstoque.create({
-      data: entradaData,
-      include: {
-        itens: {
-          include: {
-            produto: true,
-          }
+    // Uma entrada de estoque (compra) precisa somar no estoque dos produtos
+    // recebidos - sem isso "Estoque Atual" fica descolado da realidade a
+    // cada compra registrada. Tudo numa transacao pra nao creditar estoque
+    // se a entrada falhar (ou vice-versa).
+    const [entrada] = await prisma.$transaction([
+      prisma.entradaEstoque.create({
+        data: entradaData,
+        include: {
+          itens: {
+            include: {
+              produto: true,
+            }
+          },
+          fornecedor: true,
         },
-        fornecedor: true,
-      },
-    });
+      }),
+      ...data.itens.map((item: any) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { increment: item.quantidade } },
+        })
+      ),
+    ]);
 
-    revalidatePath('/admin/entradas-estoque');
-    revalidatePath('/admin/entradas-estoque/nova');
+    revalidatePath('/admin/compras');
+    revalidatePath('/admin/produtos');
+    revalidatePath('/admin/estoque');
 
     return { success: true, data: entrada };
   } catch (error) {
@@ -104,6 +117,14 @@ export async function createEntradaEstoque(data: any) {
 
 export async function updateEntradaEstoque(id: string, data: any) {
   try {
+    const entradaAnterior = await prisma.entradaEstoque.findUnique({
+      where: { id },
+      include: { itens: true },
+    });
+    if (!entradaAnterior) {
+      return { success: false, error: 'Entrada de estoque não encontrada' };
+    }
+
     const entradaData = {
       ...data,
       itens: {
@@ -112,21 +133,39 @@ export async function updateEntradaEstoque(id: string, data: any) {
       },
     };
 
-    const entrada = await prisma.entradaEstoque.update({
-      where: { id },
-      data: entradaData,
-      include: {
-        itens: {
-          include: {
-            produto: true,
-          }
+    // Desfaz o credito dos itens antigos e credita os itens novos, senao os
+    // ajustes de uma entrada editada nunca refletem no estoque.
+    const [entrada] = await prisma.$transaction([
+      prisma.entradaEstoque.update({
+        where: { id },
+        data: entradaData,
+        include: {
+          itens: {
+            include: {
+              produto: true,
+            }
+          },
+          fornecedor: true,
         },
-        fornecedor: true,
-      },
-    });
+      }),
+      ...entradaAnterior.itens.map((item) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { decrement: item.quantidade } },
+        })
+      ),
+      ...data.itens.map((item: any) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { increment: item.quantidade } },
+        })
+      ),
+    ]);
 
-    revalidatePath(`/admin/entradas-estoque/${id}`);
-    revalidatePath('/admin/entradas-estoque');
+    revalidatePath(`/admin/compras/${id}`);
+    revalidatePath('/admin/compras');
+    revalidatePath('/admin/produtos');
+    revalidatePath('/admin/estoque');
 
     return { success: true, data: entrada };
   } catch (error) {
@@ -137,11 +176,28 @@ export async function updateEntradaEstoque(id: string, data: any) {
 
 export async function deleteEntradaEstoque(id: string) {
   try {
-    await prisma.entradaEstoque.delete({
+    const entrada = await prisma.entradaEstoque.findUnique({
       where: { id },
+      include: { itens: true },
     });
+    if (!entrada) {
+      return { success: false, error: 'Entrada de estoque não encontrada' };
+    }
 
-    revalidatePath('/admin/entradas-estoque');
+    // Cancelar a entrada tem que desfazer o credito que ela deu no estoque.
+    await prisma.$transaction([
+      prisma.entradaEstoque.delete({ where: { id } }),
+      ...entrada.itens.map((item) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { decrement: item.quantidade } },
+        })
+      ),
+    ]);
+
+    revalidatePath('/admin/compras');
+    revalidatePath('/admin/produtos');
+    revalidatePath('/admin/estoque');
 
     return { success: true };
   } catch (error) {

@@ -94,8 +94,6 @@ async function proximoNumeroPedido() {
   return `PED-${(ultimoNumero + 1).toString().padStart(3, '0')}`;
 }
 
-// Note: Creating/updating/deleting sales might involve more complex logic (stock adjustment, etc.)
-// For now, implementing basic CRUD. More complex logic would be needed in a real application.
 export async function createSaidaEstoque(data: any) {
   try {
     const numeroPedido = data.numeroPedido || (await proximoNumeroPedido());
@@ -117,19 +115,32 @@ export async function createSaidaEstoque(data: any) {
       },
     };
 
-    const venda = await prisma.saidaEstoque.create({
-      data: vendaData,
-      include: {
-        itens: {
-          include: {
-            produto: true,
+    // Uma venda precisa dar baixa no estoque dos produtos vendidos - sem isso
+    // "Estoque Atual" fica descolado da realidade a cada venda registrada.
+    // Tudo numa transacao pra nao debitar estoque se a venda falhar (ou vice-versa).
+    const [venda] = await prisma.$transaction([
+      prisma.saidaEstoque.create({
+        data: vendaData,
+        include: {
+          itens: {
+            include: {
+              produto: true,
+            }
           }
-        }
-      },
-    });
+        },
+      }),
+      ...data.itens.map((item: any) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { decrement: item.quantidade } },
+        })
+      ),
+    ]);
 
     revalidatePath('/admin/vendas');
     revalidatePath('/admin/vendas/nova');
+    revalidatePath('/admin/produtos');
+    revalidatePath('/admin/estoque');
 
     return { success: true, data: venda };
   } catch (error) {
@@ -140,6 +151,14 @@ export async function createSaidaEstoque(data: any) {
 
 export async function updateSaidaEstoque(id: string, data: any) {
   try {
+    const vendaAnterior = await prisma.saidaEstoque.findUnique({
+      where: { id },
+      include: { itens: true },
+    });
+    if (!vendaAnterior) {
+      return { success: false, error: 'Venda não encontrada' };
+    }
+
     const vendaData = {
       ...data,
       formasPagamento: data.formasPagamento ? JSON.stringify(data.formasPagamento) : null,
@@ -149,20 +168,41 @@ export async function updateSaidaEstoque(id: string, data: any) {
       },
     };
 
-    const venda = await prisma.saidaEstoque.update({
-      where: { id },
-      data: vendaData,
-      include: {
-        itens: {
-          include: {
-            produto: true,
+    // Repõe o estoque dos itens antigos e da baixa nos itens novos, senao os
+    // ajustes de uma venda editada nunca refletem no estoque. A venda fica
+    // sempre em primeiro no array pra destructuring pegar o resultado certo -
+    // a ordem entre increment/decrement de produtos diferentes nao importa,
+    // sao operacoes atomicas independentes dentro da mesma transacao.
+    const [venda] = await prisma.$transaction([
+      prisma.saidaEstoque.update({
+        where: { id },
+        data: vendaData,
+        include: {
+          itens: {
+            include: {
+              produto: true,
+            }
           }
-        }
-      },
-    });
+        },
+      }),
+      ...vendaAnterior.itens.map((item) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { increment: item.quantidade } },
+        })
+      ),
+      ...data.itens.map((item: any) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { decrement: item.quantidade } },
+        })
+      ),
+    ]);
 
     revalidatePath(`/admin/vendas/${id}`);
     revalidatePath('/admin/vendas');
+    revalidatePath('/admin/produtos');
+    revalidatePath('/admin/estoque');
 
     return { success: true, data: venda };
   } catch (error) {
@@ -173,11 +213,28 @@ export async function updateSaidaEstoque(id: string, data: any) {
 
 export async function deleteSaidaEstoque(id: string) {
   try {
-    await prisma.saidaEstoque.delete({
+    const venda = await prisma.saidaEstoque.findUnique({
       where: { id },
+      include: { itens: true },
     });
+    if (!venda) {
+      return { success: false, error: 'Venda não encontrada' };
+    }
+
+    // Cancelar a venda tem que devolver a mercadoria ao estoque.
+    await prisma.$transaction([
+      prisma.saidaEstoque.delete({ where: { id } }),
+      ...venda.itens.map((item) =>
+        prisma.produto.update({
+          where: { id: item.produtoId },
+          data: { estoqueAtual: { increment: item.quantidade } },
+        })
+      ),
+    ]);
 
     revalidatePath('/admin/vendas');
+    revalidatePath('/admin/produtos');
+    revalidatePath('/admin/estoque');
 
     return { success: true };
   } catch (error) {
