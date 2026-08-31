@@ -8,10 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { getFornecedores, createFornecedor, updateFornecedor, deleteFornecedor } from '@/lib/actions/fornecedores';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import FornecedorForm from '@/components/admin/fornecedor-form';
 
 export default function SuppliersPage() {
+  const isAdmin = useSession().data?.user?.role === 'admin';
   const [fornecedores, setFornecedores] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editingFornecedor, setEditingFornecedor] = useState<any>(null);
@@ -142,9 +144,11 @@ export default function SuppliersPage() {
                 <Button variant="outline" size="sm" onClick={() => handleOpenEdit(fornecedor)}>
                   <Edit className="h-4 w-4 mr-2" /> Editar
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(fornecedor.id)}>
-                  <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                </Button>
+                {isAdmin && (
+                  <Button variant="destructive" size="sm" onClick={() => handleDelete(fornecedor.id)}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

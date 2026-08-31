@@ -20,7 +20,9 @@ import {
   Plug,
   Sun,
   Moon,
+  UserCog,
 } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { useAdminUI } from '@/components/admin-theme-provider'
@@ -46,15 +48,16 @@ const navGroups = [
     label: 'Financeiro',
     items: [
       { href: '/admin/vendas', label: 'Vendas', icon: ShoppingCart },
-      { href: '/admin/gastos', label: 'Gastos', icon: Wallet },
-      { href: '/admin/relatorios', label: 'Relatórios', icon: FileText },
+      { href: '/admin/gastos', label: 'Gastos', icon: Wallet, adminOnly: true },
+      { href: '/admin/relatorios', label: 'Relatórios', icon: FileText, adminOnly: true },
     ],
   },
   {
     label: 'Equipe & Sistema',
     items: [
-      { href: '/admin/funcionarios', label: 'Funcionários', icon: Users },
-      { href: '/admin/integracoes', label: 'Integrações', icon: Plug },
+      { href: '/admin/funcionarios', label: 'Funcionários', icon: Users, adminOnly: true },
+      { href: '/admin/usuarios', label: 'Usuários', icon: UserCog, adminOnly: true },
+      { href: '/admin/integracoes', label: 'Integrações', icon: Plug, adminOnly: true },
     ],
   },
 ]
@@ -63,6 +66,8 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
   const pathname = usePathname()
   const { theme, toggleTheme, collapsed: sharedCollapsed, setCollapsed } = useAdminUI()
   const collapsed = forceExpanded ? false : sharedCollapsed
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'admin'
 
   return (
     <aside
@@ -96,7 +101,11 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
 
         {/* Navigation */}
         <nav className="flex-1 space-y-5 overflow-y-auto p-3">
-          {navGroups.map((group) => (
+          {navGroups.map((group) => {
+            const items = group.items.filter((item) => !('adminOnly' in item && item.adminOnly) || isAdmin)
+            if (items.length === 0) return null
+
+            return (
             <div key={group.label}>
               {!collapsed && (
                 <p className="mb-1.5 px-3 font-mono text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/40">
@@ -104,7 +113,7 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
                 </p>
               )}
               <div className="space-y-0.5">
-                {group.items.map((item) => {
+                {items.map((item) => {
                   const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
                   const Icon = item.icon
 
@@ -141,7 +150,8 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
                 })}
               </div>
             </div>
-          ))}
+            )
+          })}
         </nav>
 
         {/* Footer */}

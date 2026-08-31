@@ -15,6 +15,7 @@ import {
 import { Search, Plus, Edit, Trash2, Clock, Car, User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getOrdensServico, deleteOrdemServico, atualizarStatusOrdemServico } from '@/lib/actions/ordens-servico';
+import { useSession } from 'next-auth/react';
 
 const colunas = [
   { status: 'aberto', label: 'Aberta', dotClass: 'bg-status-aberto' },
@@ -42,6 +43,7 @@ function diasNoPatio(dataEntrada: string) {
 
 export default function OrdensServicoPage() {
   const router = useRouter();
+  const isAdmin = useSession().data?.user?.role === 'admin';
   const [ordens, setOrdens] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [ordemParaExcluir, setOrdemParaExcluir] = useState<string | null>(null);
@@ -143,9 +145,11 @@ export default function OrdensServicoPage() {
                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => router.push(`/admin/ordens-servico/${ordem.id}/editar`)}>
                                 <Edit className="h-3.5 w-3.5" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setOrdemParaExcluir(ordem.id)}>
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                              {isAdmin && (
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setOrdemParaExcluir(ordem.id)}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                             </div>
                           </div>
                           <Select value={ordem.status} onValueChange={(v) => handleStatusChange(ordem.id, v)}>

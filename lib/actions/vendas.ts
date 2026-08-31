@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { parseDateFields } from '../prisma-helpers';
+import { requireAdmin } from '../auth-guard';
 
 export async function getSaidaEstoque(id: string) {
   try {
@@ -214,6 +215,7 @@ export async function updateSaidaEstoque(id: string, data: any) {
 
 export async function deleteSaidaEstoque(id: string) {
   try {
+    await requireAdmin();
     const venda = await prisma.saidaEstoque.findUnique({
       where: { id },
       include: { itens: true },

@@ -12,9 +12,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Search, Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 
 export default function ProductListPage() {
   const router = useRouter();
+  const isAdmin = useSession().data?.user?.role === 'admin';
   const [produtos, setProdutos] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState('');
@@ -149,9 +151,11 @@ export default function ProductListPage() {
                         <Button variant="outline" size="sm" title="Editar" onClick={() => router.push(`/admin/produtos/${produto.id}/editar`)}>
                           <Edit className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Editar</span>
                         </Button>
-                        <Button variant="outline" size="sm" title="Excluir" onClick={() => setProdutoToDelete(produto.id)}>
-                          <Trash2 className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Excluir</span>
-                        </Button>
+                        {isAdmin && (
+                          <Button variant="outline" size="sm" title="Excluir" onClick={() => setProdutoToDelete(produto.id)}>
+                            <Trash2 className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Excluir</span>
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
