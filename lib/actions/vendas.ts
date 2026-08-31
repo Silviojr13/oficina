@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
+import { parseDateFields } from '../prisma-helpers';
 
 export async function getSaidaEstoque(id: string) {
   try {
@@ -98,7 +99,7 @@ export async function createSaidaEstoque(data: any) {
   try {
     const numeroPedido = data.numeroPedido || (await proximoNumeroPedido());
     const vendaData = {
-      ...data,
+      ...parseDateFields(data, ['dataHora']),
       numeroPedido,
       formasPagamento: data.formasPagamento ? JSON.stringify(data.formasPagamento) : null,
       itens: {
@@ -160,7 +161,7 @@ export async function updateSaidaEstoque(id: string, data: any) {
     }
 
     const vendaData = {
-      ...data,
+      ...parseDateFields(data, ['dataHora']),
       formasPagamento: data.formasPagamento ? JSON.stringify(data.formasPagamento) : null,
       itens: {
         deleteMany: {}, // Delete old items

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
+import { parseDateFields } from '../prisma-helpers';
 
 export async function getGasto(id: string) {
   try {
@@ -65,9 +66,8 @@ export async function getGastos(page: number = 1, limit: number = 10, search?: s
 
 export async function createGasto(data: any) {
   try {
-    // Assuming no JSON fields for Gasto model based on schema
     const gasto = await prisma.gasto.create({
-      data,
+      data: parseDateFields(data, ['dataVencimento', 'dataPagamento']),
     });
 
     revalidatePath('/admin/gastos');
@@ -82,10 +82,9 @@ export async function createGasto(data: any) {
 
 export async function updateGasto(id: string, data: any) {
   try {
-    // Assuming no JSON fields for Gasto model based on schema
     const gasto = await prisma.gasto.update({
       where: { id },
-      data,
+      data: parseDateFields(data, ['dataVencimento', 'dataPagamento']),
     });
 
     revalidatePath(`/admin/gastos/${id}`);

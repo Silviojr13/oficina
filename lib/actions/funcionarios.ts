@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
+import { parseDateFields } from '../prisma-helpers';
 
 export async function getFuncionario(id: string) {
   try {
@@ -57,7 +58,7 @@ export async function getFuncionarios(page: number = 1, limit: number = 10, sear
 export async function createFuncionario(data: any) {
   try {
     const funcionario = await prisma.funcionario.create({
-      data,
+      data: parseDateFields(data, ['dataAdmissao', 'dataDemissao']),
     });
 
     revalidatePath('/admin/funcionarios');
@@ -74,7 +75,7 @@ export async function updateFuncionario(id: string, data: any) {
   try {
     const funcionario = await prisma.funcionario.update({
       where: { id },
-      data,
+      data: parseDateFields(data, ['dataAdmissao', 'dataDemissao']),
     });
 
     revalidatePath(`/admin/funcionarios/${id}`);
