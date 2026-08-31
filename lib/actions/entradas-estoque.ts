@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
+import { parseDateFields } from '../prisma-helpers';
 
 export async function getEntradaEstoque(id: string) {
   try {
@@ -74,7 +75,7 @@ export async function getEntradasEstoque(page: number = 1, limit: number = 10, s
 export async function createEntradaEstoque(data: any) {
   try {
     const entradaData = {
-      ...data,
+      ...parseDateFields(data, ['dataEmissao', 'dataEntrada', 'dataVencimento']),
       itens: {
         create: data.itens,
       },
@@ -126,7 +127,7 @@ export async function updateEntradaEstoque(id: string, data: any) {
     }
 
     const entradaData = {
-      ...data,
+      ...parseDateFields(data, ['dataEmissao', 'dataEntrada', 'dataVencimento']),
       itens: {
         deleteMany: {}, // Delete old items
         create: data.itens, // Create new items

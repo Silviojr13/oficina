@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { criarAnuncioMercadoLivre } from '../mercado-livre';
+import { parseDateFields } from '../prisma-helpers';
 
 export async function getProduto(id: string) {
   try {
@@ -134,7 +135,7 @@ export async function getProdutos(page: number = 1, limit: number = 10, search?:
 export async function createProduto(data: any) {
   try {
     const produtoData = {
-      ...data,
+      ...parseDateFields(data, ['dataInicioPromocao', 'dataFimPromocao']),
       referenciaCruzada: data.referenciaCruzada ? JSON.stringify(data.referenciaCruzada) : null,
       tags: data.tags ? JSON.stringify(data.tags) : null,
       fotos: data.fotos ? JSON.stringify(data.fotos) : null,
@@ -205,7 +206,7 @@ export async function reenviarParaMercadoLivre(produtoId: string) {
 export async function updateProduto(id: string, data: any) {
   try {
     const produtoData = {
-      ...data,
+      ...parseDateFields(data, ['dataInicioPromocao', 'dataFimPromocao']),
       referenciaCruzada: data.referenciaCruzada ? JSON.stringify(data.referenciaCruzada) : null,
       tags: data.tags ? JSON.stringify(data.tags) : null,
       fotos: data.fotos ? JSON.stringify(data.fotos) : null,

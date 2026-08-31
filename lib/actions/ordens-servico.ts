@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
+import { parseDateFields } from '../prisma-helpers';
 
 async function proximoNumero() {
   const ultima = await prisma.ordemServico.findFirst({
@@ -71,7 +72,7 @@ export async function createOrdemServico(data: any) {
     const numero = await proximoNumero();
 
     const ordemData = {
-      ...data,
+      ...parseDateFields(data, ['dataEntrada', 'dataPrevisaoEntrega', 'dataSaida']),
       numero,
       servicosRealizados: data.servicosRealizados ? JSON.stringify(data.servicosRealizados) : null,
       itens: data.itens?.length ? { create: data.itens } : undefined,
@@ -109,7 +110,7 @@ export async function updateOrdemServico(id: string, data: any) {
     const { numero, ...rest } = data;
 
     const ordemData = {
-      ...rest,
+      ...parseDateFields(rest, ['dataEntrada', 'dataPrevisaoEntrega', 'dataSaida']),
       servicosRealizados: data.servicosRealizados ? JSON.stringify(data.servicosRealizados) : null,
       ...(data.itens
         ? { itens: { deleteMany: {}, create: data.itens } }
