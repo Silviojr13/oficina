@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { parseDateFields } from '../prisma-helpers';
+import { requireAdmin } from '../auth-guard';
 
 async function proximoNumero() {
   const ultima = await prisma.ordemServico.findFirst({
@@ -172,6 +173,7 @@ export async function atualizarStatusOrdemServico(id: string, status: string) {
 
 export async function deleteOrdemServico(id: string) {
   try {
+    await requireAdmin();
     const ordem = await prisma.ordemServico.findUnique({ where: { id }, include: { itens: true } });
     if (!ordem) {
       return { success: false, error: 'Ordem de serviço não encontrada' };

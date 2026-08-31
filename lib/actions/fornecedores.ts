@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
+import { requireAdmin } from '../auth-guard';
 
 // O formulário (e o restante do admin) trabalha com endereco/dadosBancarios
 // aninhados, mas o schema Prisma guarda esses campos "achatados" (colunas
@@ -143,6 +144,7 @@ export async function updateFornecedor(id: string, data: any) {
 
 export async function deleteFornecedor(id: string) {
   try {
+    await requireAdmin();
     await prisma.fornecedor.delete({
       where: { id },
     });

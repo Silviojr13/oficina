@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { parseDateFields } from '../prisma-helpers';
+import { requireAdmin } from '../auth-guard';
 
 export async function getGasto(id: string) {
   try {
+    await requireAdmin();
     const gasto = await prisma.gasto.findUnique({
       where: { id },
     });
@@ -14,10 +16,6 @@ export async function getGasto(id: string) {
       return null;
     }
 
-    // Parse JSON field if necessary (though 'formasPagamento' is not in Gasto model, assuming no JSON fields for this model based on schema)
-    // The Gasto model does not seem to have fields requiring JSON parsing based on the schema definition.
-    // If 'formasPagamento' was intended for Gasto, it would need to be added to the schema.
-    // For now, returning the gasto as is.
     return gasto;
   } catch (error) {
     console.error('Erro ao buscar gasto:', error);
@@ -27,6 +25,7 @@ export async function getGasto(id: string) {
 
 export async function getGastos(page: number = 1, limit: number = 10, search?: string) {
   try {
+    await requireAdmin();
     const skip = (page - 1) * limit;
 
     let whereClause: any = {};
@@ -48,7 +47,6 @@ export async function getGastos(page: number = 1, limit: number = 10, search?: s
       where: whereClause,
     });
 
-    // Assuming no JSON fields for Gasto model based on schema
     return {
       data: gastos,
       pagination: {
@@ -66,6 +64,7 @@ export async function getGastos(page: number = 1, limit: number = 10, search?: s
 
 export async function createGasto(data: any) {
   try {
+    await requireAdmin();
     const gasto = await prisma.gasto.create({
       data: parseDateFields(data, ['dataVencimento', 'dataPagamento']),
     });
@@ -82,6 +81,7 @@ export async function createGasto(data: any) {
 
 export async function updateGasto(id: string, data: any) {
   try {
+    await requireAdmin();
     const gasto = await prisma.gasto.update({
       where: { id },
       data: parseDateFields(data, ['dataVencimento', 'dataPagamento']),
@@ -99,6 +99,7 @@ export async function updateGasto(id: string, data: any) {
 
 export async function deleteGasto(id: string) {
   try {
+    await requireAdmin();
     await prisma.gasto.delete({
       where: { id },
     });
@@ -115,6 +116,7 @@ export async function deleteGasto(id: string) {
 // Action to mark a gasto as paid
 export async function marcarGastoComoPago(id: string, pago: boolean) {
   try {
+    await requireAdmin();
     const gasto = await prisma.gasto.update({
       where: { id },
       data: { status: pago ? 'pago' : 'pendente' },

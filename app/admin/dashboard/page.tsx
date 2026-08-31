@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import {
   DollarSign,
   ShoppingCart,
@@ -64,6 +65,9 @@ const dashboardKPIsPadrao = {
 }
 
 export default function DashboardPage() {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'admin'
+
   const [ordens, setOrdens] = useState<any[]>([])
   const [produtos, setProdutos] = useState<any[]>([])
   const [kpis, setKpis] = useState(dashboardKPIsPadrao)
@@ -75,12 +79,17 @@ export default function DashboardPage() {
   useEffect(() => {
     getOrdensServico(1, 1000).then((res) => setOrdens(res.data))
     getProdutos(1, 1000).then((res) => setProdutos(res.data))
+  }, [])
+
+  // Financeiro/KPIs sao restritos a admin - nem busca os dados pro Funcionario.
+  useEffect(() => {
+    if (!isAdmin) return
     getDashboardKPIs().then(setKpis)
     getMovimentacoesRecentes(8).then(setMovimentacoesRecentes)
     getVendasUltimosDias(30).then(setVendasUltimosDias)
     getTopProdutosMes(10).then(setTopProdutosMes)
     getVendasPorCategoria().then(setVendasPorCategoria)
-  }, [])
+  }, [isAdmin])
 
   const produtosBaixoEstoque = produtos.filter((p) => p.estoqueAtual <= p.estoqueMinimo)
 
@@ -239,7 +248,9 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Loja & Estoque */}
+        {/* Loja & Estoque - financeiro, restrito a admin */}
+        {isAdmin && (
+        <>
         <h2 className="font-display text-lg font-bold uppercase flex items-center gap-2 pt-2">
           <Package className="h-5 w-5 text-primary" /> Loja &amp; Estoque
         </h2>
@@ -510,6 +521,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+        </>
+        )}
 
         {/* Produtos Abaixo do Estoque */}
         {produtosBaixoEstoque.length > 0 && (

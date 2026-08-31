@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { criarAnuncioMercadoLivre } from '../mercado-livre';
 import { parseDateFields } from '../prisma-helpers';
+import { requireAdmin } from '../auth-guard';
 
 export async function getProduto(id: string) {
   try {
@@ -199,6 +200,7 @@ async function sincronizarComMercadoLivre(produtoId: string) {
 }
 
 export async function reenviarParaMercadoLivre(produtoId: string) {
+  await requireAdmin();
   await sincronizarComMercadoLivre(produtoId);
   revalidatePath('/admin/produtos');
 }
@@ -239,6 +241,7 @@ export async function updateProduto(id: string, data: any) {
 
 export async function deleteProduto(id: string) {
   try {
+    await requireAdmin();
     await prisma.produto.delete({
       where: { id },
     });

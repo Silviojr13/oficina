@@ -10,11 +10,13 @@ import { getEntradasEstoque, createEntradaEstoque, deleteEntradaEstoque } from '
 import { getFornecedores } from '@/lib/actions/fornecedores';
 import { getProdutos } from '@/lib/actions/produtos';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import EntradaEstoqueForm from '@/components/admin/entrada-estoque-form';
 import type { Produto } from '@/lib/types';
 
 export default function PurchasesPage() {
+  const isAdmin = useSession().data?.user?.role === 'admin';
   const [entradas, setEntradas] = useState<any[]>([]);
   const [fornecedores, setFornecedores] = useState<any[]>([]);
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -115,11 +117,13 @@ export default function PurchasesPage() {
               <CardContent className="p-4 space-y-2">
                 <p><span className="font-medium">Data da Entrada:</span> {new Date(entrada.dataEntrada).toLocaleDateString('pt-BR')}</p>
                 <p><span className="font-medium">Fornecedor:</span> {entrada.fornecedor?.nomeFantasia ?? entrada.fornecedorId}</p>
-                <div className="flex justify-end space-x-2 mt-4">
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(entrada.id)}>
-                    <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                  </Button>
-                </div>
+                {isAdmin && (
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(entrada.id)}>
+                      <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))

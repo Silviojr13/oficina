@@ -1,6 +1,7 @@
 'use server';
 
 import prisma from '../prisma';
+import { requireAdmin } from '../auth-guard';
 
 function inicioDoDia(data: Date) {
   const d = new Date(data);
@@ -14,6 +15,7 @@ function inicioDoMes(data: Date) {
 
 export async function getDashboardKPIs() {
   try {
+    await requireAdmin();
     const agora = new Date();
     const hoje = inicioDoDia(agora);
     const inicioMesAtual = inicioDoMes(agora);
@@ -77,6 +79,7 @@ export async function getDashboardKPIs() {
 
 export async function getVendasUltimosDias(dias: number = 30) {
   try {
+    await requireAdmin();
     const desde = new Date();
     desde.setDate(desde.getDate() - dias);
     desde.setHours(0, 0, 0, 0);
@@ -109,6 +112,7 @@ export async function getVendasUltimosDias(dias: number = 30) {
 
 export async function getTopProdutosMes(limite: number = 10) {
   try {
+    await requireAdmin();
     const inicioMesAtual = inicioDoMes(new Date());
 
     const itens = await prisma.itemMovimentacao_saida.findMany({
@@ -137,6 +141,7 @@ const CORES_CATEGORIA = ['#F97316', '#22C55E', '#3B82F6', '#EAB308', '#8B5CF6', 
 
 export async function getVendasPorCategoria() {
   try {
+    await requireAdmin();
     const inicioMesAtual = inicioDoMes(new Date());
 
     const itens = await prisma.itemMovimentacao_saida.findMany({
@@ -160,6 +165,7 @@ export async function getVendasPorCategoria() {
 
 export async function getMovimentacoesRecentes(limite: number = 8) {
   try {
+    await requireAdmin();
     const [vendas, entradas] = await Promise.all([
       prisma.saidaEstoque.findMany({
         orderBy: { dataHora: 'desc' },

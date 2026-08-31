@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Bell, Search, User, Menu, Plus } from 'lucide-react'
+import { Bell, Search, User, Menu, Plus, LogOut } from 'lucide-react'
+import { useSession, signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -16,12 +17,21 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { AdminSidebar } from './admin-sidebar'
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Admin',
+  funcionario: 'Funcionário',
+  cliente: 'Cliente',
+}
+
 interface AdminHeaderProps {
   title: string
   subtitle?: string
 }
 
 export function AdminHeader({ title, subtitle }: AdminHeaderProps) {
+  const { data: session } = useSession()
+  const user = session?.user
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-card px-6">
       {/* Mobile menu */}
@@ -94,18 +104,29 @@ export function AdminHeader({ title, subtitle }: AdminHeaderProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                <User className="h-4 w-4 text-primary-foreground" />
-              </div>
+              {user?.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.image} alt={user.name ?? ''} className="h-8 w-8 rounded-full" />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                  <User className="h-4 w-4 text-primary-foreground" />
+                </div>
+              )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+            <DropdownMenuLabel className="flex flex-col gap-0.5">
+              <span className="truncate">{user?.name ?? user?.email ?? 'Minha Conta'}</span>
+              {user?.role && (
+                <span className="text-xs font-normal text-muted-foreground">
+                  {ROLE_LABELS[user.role] ?? user.role}
+                </span>
+              )}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Perfil</DropdownMenuItem>
-            <DropdownMenuItem>Configurações</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">Sair</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={() => signOut({ redirectTo: '/' })}>
+              <LogOut className="h-4 w-4 mr-2" /> Sair
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { parseDateFields } from '../prisma-helpers';
+import { requireAdmin } from '../auth-guard';
 
 export async function getFuncionario(id: string) {
   try {
+    await requireAdmin();
     const funcionario = await prisma.funcionario.findUnique({
       where: { id },
     });
@@ -19,6 +21,7 @@ export async function getFuncionario(id: string) {
 
 export async function getFuncionarios(page: number = 1, limit: number = 10, search?: string) {
   try {
+    await requireAdmin();
     const skip = (page - 1) * limit;
 
     let whereClause: any = {};
@@ -57,6 +60,7 @@ export async function getFuncionarios(page: number = 1, limit: number = 10, sear
 
 export async function createFuncionario(data: any) {
   try {
+    await requireAdmin();
     const funcionario = await prisma.funcionario.create({
       data: parseDateFields(data, ['dataAdmissao', 'dataDemissao']),
     });
@@ -73,6 +77,7 @@ export async function createFuncionario(data: any) {
 
 export async function updateFuncionario(id: string, data: any) {
   try {
+    await requireAdmin();
     const funcionario = await prisma.funcionario.update({
       where: { id },
       data: parseDateFields(data, ['dataAdmissao', 'dataDemissao']),
@@ -90,6 +95,7 @@ export async function updateFuncionario(id: string, data: any) {
 
 export async function deleteFuncionario(id: string) {
   try {
+    await requireAdmin();
     await prisma.funcionario.delete({
       where: { id },
     });
