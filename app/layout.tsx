@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { DM_Sans, Barlow_Condensed, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
+import { AuthSessionProvider } from '@/components/session-provider'
 import './globals.css'
 
 const dmSans = DM_Sans({ 
@@ -67,8 +68,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${dmSans.variable} ${barlowCondensed.variable} ${jetbrainsMono.variable} bg-background`}>
       <body className="font-sans antialiased min-h-screen">
-        {children}
-        <Toaster richColors closeButton />
+        <AuthSessionProvider>
+          {children}
+          <Toaster richColors closeButton />
+        </AuthSessionProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

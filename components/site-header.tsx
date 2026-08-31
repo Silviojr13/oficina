@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { useSession, signOut } from 'next-auth/react'
 import { ShoppingCart, Menu, X, Phone, Search, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +20,10 @@ const navLinks = [
 export function SiteHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const itemCount = useCartStore((state) => state.getItemCount())
+  const { data: session } = useSession()
+  const user = session?.user
+  const isStaff = user?.role === 'admin' || user?.role === 'funcionario'
+  const pathname = usePathname()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -29,9 +35,23 @@ export function SiteHeader() {
             <span>(11) 3456-7890</span>
           </div>
           <span className="hidden md:block">Seg-Sex: 8h às 18h | Sáb: 8h às 13h</span>
-          <Link href="/admin" className="hover:underline">
-            Área Admin
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-3">
+              {isStaff && (
+                <Link href="/admin/dashboard" className="hover:underline">
+                  Área Admin
+                </Link>
+              )}
+              <span className="hidden sm:inline">Olá, {user.name?.split(' ')[0] ?? user.email}</span>
+              <button type="button" onClick={() => signOut({ redirectTo: '/' })} className="hover:underline">
+                Sair
+              </button>
+            </div>
+          ) : (
+            <Link href={`/login?callbackUrl=${encodeURIComponent(pathname)}`} className="hover:underline">
+              Entrar / Criar conta
+            </Link>
+          )}
         </div>
       </div>
 

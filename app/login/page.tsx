@@ -3,7 +3,15 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { signIn } from '@/lib/auth';
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const { callbackUrl } = await searchParams;
+  // So aceita caminho relativo (nunca uma URL externa) pra evitar open redirect.
+  const destino = callbackUrl && callbackUrl.startsWith('/') ? callbackUrl : '/';
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-secondary/30 p-4">
       <Card className="w-full max-w-sm">
@@ -12,7 +20,7 @@ export default function LoginPage() {
             <Wrench className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold">Entrar no sistema</h1>
+            <h1 className="text-lg font-semibold">Entrar ou criar conta</h1>
             <p className="text-sm text-muted-foreground">Silvio Auto Elétrica e Mecânica</p>
           </div>
         </CardHeader>
@@ -20,12 +28,12 @@ export default function LoginPage() {
           <form
             action={async () => {
               'use server';
-              await signIn('google', { redirectTo: '/admin/dashboard' });
+              await signIn('google', { redirectTo: destino });
             }}
           >
             <Button type="submit" className="w-full gap-2" size="lg">
               <GoogleIcon className="h-4 w-4" />
-              Entrar com Google
+              Continuar com Google
             </Button>
           </form>
         </CardContent>

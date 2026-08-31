@@ -16,7 +16,9 @@ export default auth((req) => {
   const session = req.auth;
 
   if (!session?.user) {
-    return NextResponse.redirect(new URL('/login', req.nextUrl));
+    const loginUrl = new URL('/login', req.nextUrl);
+    loginUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   const role = session.user.role;
