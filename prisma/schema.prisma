@@ -99,6 +99,13 @@ model OrdemServico {
   clienteNome         String
   clienteTelefone     String?
   clienteCpfCnpj      String?
+  // Opcionais - a OS continua aceitando cliente/veiculo digitado avulso (o
+  // texto acima) sem exigir cadastro, pra nao travar atendimento de balcao.
+  // Quando um cadastro e selecionado no formulario, esses dois ficam
+  // preenchidos e habilitam historico de verdade por cliente/placa.
+  // onDelete SetNull: apagar o cadastro nao pode apagar a OS (historico real).
+  clienteId           String?
+  veiculoId           String?
   mecanicoResponsavel String?
   dataEntrada         DateTime           @default(now())
   dataPrevisaoEntrega DateTime?
@@ -119,9 +126,46 @@ model OrdemServico {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
   itens               ItemOrdemServico[]
+  cliente             Cliente?           @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  veiculo             Veiculo?           @relation(fields: [veiculoId], references: [id], onDelete: SetNull)
 
   @@index([placa])
   @@index([status])
+  @@index([clienteId])
+  @@index([veiculoId])
+}
+
+// Cadastro de cliente/veiculo reaproveitavel entre ordens de servico -
+// independente do login (Google): a maioria dos clientes de balcao nunca
+// vai logar no site, entao isso nao se liga a User de proposito.
+model Cliente {
+  id        String         @id @default(cuid())
+  nome      String
+  telefone  String?
+  cpfCnpj   String?
+  email     String?
+  createdAt DateTime       @default(now())
+  veiculos  Veiculo[]
+  ordens    OrdemServico[]
+
+  @@index([nome])
+  @@index([telefone])
+}
+
+model Veiculo {
+  id        String         @id @default(cuid())
+  clienteId String
+  placa     String
+  marca     String?
+  modelo    String?
+  ano       Int?
+  cor       String?
+  createdAt DateTime       @default(now())
+  cliente   Cliente        @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  ordens    OrdemServico[]
+
+  @@index([clienteId])
+  @@index([placa])
 }
 
 model ItemOrdemServico {

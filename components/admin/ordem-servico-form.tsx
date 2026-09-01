@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,9 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Trash2, Search, X, Car, Clock, AlertTriangle } from 'lucide-react';
 import type { Produto } from '@/lib/types';
 import { optionalNumber, avisarErroValidacao } from '@/lib/zod-helpers';
+import { searchClientes, getHistoricoPorPlaca } from '@/lib/actions/clientes';
 
 const statusLabels: Record<string, string> = {
   aberto: 'Aberta',
@@ -54,6 +56,9 @@ type OrdemServicoFormData = z.infer<typeof ordemServicoSchema>;
 
 type Servico = { id: string; descricao: string; valor: number };
 type ItemPeca = { produtoId: string; quantidade: number; valorUnitario: number; valorTotal: number };
+type VeiculoCadastrado = { id: string; placa: string; marca: string | null; modelo: string | null; ano: number | null; cor: string | null };
+type ClienteCadastrado = { id: string; nome: string; telefone: string | null; cpfCnpj: string | null; veiculos: VeiculoCadastrado[] };
+type HistoricoOS = { id: string; numero: string; dataEntrada: Date; status: string; problemaRelatado: string | null; kmEntrada: number; valorTotal: number };
 
 interface OrdemServicoFormProps {
   produtos: Produto[];
@@ -119,6 +124,77 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
   const [produtoSelecionado, setProdutoSelecionado] = useState('');
   const [quantidadeSelecionada, setQuantidadeSelecionada] = useState('1');
 
+  // Busca/vinculo de cliente e veiculo cadastrados - opcional, nao trava o
+  // atendimento: se nao achar nada, o mecanico continua digitando avulso
+  // como sempre (Fase 3 do planejamento).
+  const [buscaCliente, setBuscaCliente] = useState('');
+  const [resultadosClientes, setResultadosClientes] = useState<ClienteCadastrado[]>([]);
+  const [clienteSelecionado, setClienteSelecionado] = useState<ClienteCadastrado | null>(
+    initialData?.cliente ?? null
+  );
+  const [veiculoIdSelecionado, setVeiculoIdSelecionado] = useState<string | undefined>(initialData?.veiculoId ?? undefined);
+  const [historico, setHistorico] = useState<HistoricoOS[]>([]);
+
+  useEffect(() => {
+    const termo = buscaCliente.trim();
+    if (termo.length < 2) {
+      setResultadosClientes([]);
+      return;
+    }
+    const handle = setTimeout(() => {
+      searchClientes(termo).then(setResultadosClientes);
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [buscaCliente]);
+
+  const placaAtual = watch('placa');
+  useEffect(() => {
+    const placa = placaAtual?.trim();
+    if (!placa || placa.length < 5) {
+      setHistorico([]);
+      return;
+    }
+    const handle = setTimeout(() => {
+      getHistoricoPorPlaca(placa).then((res) =>
+        setHistorico(res.filter((h: any) => h.id !== initialData?.id))
+      );
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [placaAtual, initialData?.id]);
+
+  const selecionarVeiculo = (veiculo: VeiculoCadastrado) => {
+    setVeiculoIdSelecionado(veiculo.id);
+    setValue('placa', veiculo.placa);
+    setValue('veiculoMarca', veiculo.marca ?? '');
+    setValue('veiculoModelo', veiculo.modelo ?? '');
+    setValue('veiculoAno', veiculo.ano ?? undefined);
+    setValue('veiculoCor', veiculo.cor ?? '');
+  };
+
+  const selecionarCliente = (cliente: ClienteCadastrado) => {
+    setClienteSelecionado(cliente);
+    setValue('clienteNome', cliente.nome);
+    setValue('clienteTelefone', cliente.telefone ?? '');
+    setValue('clienteCpfCnpj', cliente.cpfCnpj ?? '');
+    setBuscaCliente('');
+    setResultadosClientes([]);
+    if (cliente.veiculos.length === 1) {
+      selecionarVeiculo(cliente.veiculos[0]);
+    } else {
+      setVeiculoIdSelecionado(undefined);
+    }
+  };
+
+  const limparClienteSelecionado = () => {
+    setClienteSelecionado(null);
+    setVeiculoIdSelecionado(undefined);
+  };
+
+  const ultimaVisita = historico[0];
+  const diasDesdeUltimaVisita = ultimaVisita
+    ? Math.floor((Date.now() - new Date(ultimaVisita.dataEntrada).getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+
   const adicionarServico = () => {
     const valor = parseFloat(novoServicoValor);
     if (!novoServicoDescricao || !valor || valor <= 0) return;
@@ -153,6 +229,8 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
     onSubmit({
       ...data,
       placa: data.placa.toUpperCase(),
+      clienteId: clienteSelecionado?.id ?? null,
+      veiculoId: veiculoIdSelecionado ?? null,
       servicosRealizados: servicos,
       itens: itens.map((i) => ({ produtoId: i.produtoId, quantidade: i.quantidade, valorUnitario: i.valorUnitario, valorTotal: i.valorTotal })),
       valorMaoDeObra,
@@ -163,6 +241,92 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit, avisarErroValidacao)} className="space-y-6">
+      <Card>
+        <CardHeader><CardTitle>Cliente</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          {clienteSelecionado ? (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
+              <div className="text-sm">
+                <span className="font-medium">{clienteSelecionado.nome}</span>
+                <span className="text-muted-foreground"> — cliente cadastrado</span>
+              </div>
+              <Button type="button" variant="ghost" size="sm" onClick={limparClienteSelecionado}>
+                <X className="h-3.5 w-3.5 mr-1" /> Desvincular
+              </Button>
+            </div>
+          ) : (
+            <div className="relative">
+              <Label htmlFor="buscaCliente">Buscar cliente cadastrado (opcional)</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="buscaCliente"
+                  className="pl-9"
+                  placeholder="Nome, telefone ou placa..."
+                  value={buscaCliente}
+                  onChange={(e) => setBuscaCliente(e.target.value)}
+                  autoComplete="off"
+                />
+              </div>
+              {resultadosClientes.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-popover shadow-md overflow-hidden">
+                  {resultadosClientes.map((cliente) => (
+                    <button
+                      type="button"
+                      key={cliente.id}
+                      onClick={() => selecionarCliente(cliente)}
+                      className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-secondary"
+                    >
+                      <span className="font-medium">{cliente.nome}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {cliente.telefone ?? 'sem telefone'}
+                        {cliente.veiculos.length > 0 && ` · ${cliente.veiculos.map((v) => v.placa).join(', ')}`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Não achou? Sem problema, é só preencher os campos abaixo normalmente.
+              </p>
+            </div>
+          )}
+
+          {clienteSelecionado && clienteSelecionado.veiculos.length > 1 && (
+            <div>
+              <Label>Selecione o veículo</Label>
+              <Select value={veiculoIdSelecionado} onValueChange={(id) => {
+                const veiculo = clienteSelecionado.veiculos.find((v) => v.id === id);
+                if (veiculo) selecionarVeiculo(veiculo);
+              }}>
+                <SelectTrigger><SelectValue placeholder="Escolha o veículo desta visita" /></SelectTrigger>
+                <SelectContent>
+                  {clienteSelecionado.veiculos.map((v) => (
+                    <SelectItem key={v.id} value={v.id}>{v.placa} {v.modelo && `· ${v.modelo}`}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="clienteNome">Nome *</Label>
+              <Input id="clienteNome" {...register('clienteNome')} />
+              {errors.clienteNome && <span className="text-destructive text-sm">{errors.clienteNome.message}</span>}
+            </div>
+            <div>
+              <Label htmlFor="clienteTelefone">Telefone</Label>
+              <Input id="clienteTelefone" {...register('clienteTelefone')} />
+            </div>
+            <div>
+              <Label htmlFor="clienteCpfCnpj">CPF/CNPJ</Label>
+              <Input id="clienteCpfCnpj" {...register('clienteCpfCnpj')} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader><CardTitle>Veículo</CardTitle></CardHeader>
         <CardContent className="space-y-4">
@@ -196,25 +360,32 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
               <Input id="veiculoCor" {...register('veiculoCor')} />
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader><CardTitle>Cliente</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="clienteNome">Nome *</Label>
-            <Input id="clienteNome" {...register('clienteNome')} />
-            {errors.clienteNome && <span className="text-destructive text-sm">{errors.clienteNome.message}</span>}
-          </div>
-          <div>
-            <Label htmlFor="clienteTelefone">Telefone</Label>
-            <Input id="clienteTelefone" {...register('clienteTelefone')} />
-          </div>
-          <div>
-            <Label htmlFor="clienteCpfCnpj">CPF/CNPJ</Label>
-            <Input id="clienteCpfCnpj" {...register('clienteCpfCnpj')} />
-          </div>
+          {historico.length > 0 && (
+            <div className="rounded-lg border border-border p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" /> Histórico deste veículo
+                </p>
+                {diasDesdeUltimaVisita !== null && diasDesdeUltimaVisita > 180 && (
+                  <Badge variant="outline" className="bg-warning/20 text-warning border-warning gap-1">
+                    <AlertTriangle className="h-3 w-3" /> Última visita há {diasDesdeUltimaVisita} dias
+                  </Badge>
+                )}
+              </div>
+              <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                {historico.slice(0, 5).map((h) => (
+                  <div key={h.id} className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <Car className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{h.numero} — {h.problemaRelatado || statusLabels[h.status]}</span>
+                    </span>
+                    <span className="flex-shrink-0">{new Date(h.dataEntrada).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

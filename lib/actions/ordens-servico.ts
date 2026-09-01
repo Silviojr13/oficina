@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { parseDateFields } from '../prisma-helpers';
-import { requireAdmin } from '../auth-guard';
+import { requireAdmin, requireStaff } from '../auth-guard';
 
 async function proximoNumero() {
   const ultima = await prisma.ordemServico.findFirst({
@@ -25,7 +25,10 @@ export async function getOrdemServico(id: string) {
   try {
     const ordem = await prisma.ordemServico.findUnique({
       where: { id },
-      include: { itens: { include: { produto: true } } },
+      include: {
+        itens: { include: { produto: true } },
+        cliente: { include: { veiculos: true } },
+      },
     });
     return ordem ? parseServicos(ordem) : null;
   } catch (error) {
@@ -70,6 +73,7 @@ export async function getOrdensServico(page: number = 1, limit: number = 50, sea
 
 export async function createOrdemServico(data: any) {
   try {
+    await requireStaff();
     const numero = await proximoNumero();
 
     const ordemData = {
@@ -108,6 +112,7 @@ export async function createOrdemServico(data: any) {
 
 export async function updateOrdemServico(id: string, data: any) {
   try {
+    await requireStaff();
     const { numero, ...rest } = data;
 
     const ordemData = {
