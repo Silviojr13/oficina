@@ -308,6 +308,23 @@ model ItemMovimentacao_entrada {
   @@index([entradaId])
 }
 
+// Mensagens do formulario de contato da loja publica - inclui pedidos
+// encaminhados pelo carrinho (o site nao tem checkout/pagamento de verdade,
+// entao "Finalizar Pedido" vira uma solicitacao de contato real).
+model MensagemContato {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String
+  telefone  String?
+  assunto   String?
+  veiculo   String?
+  mensagem  String
+  lida      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([lida])
+}
+
 // --- Autenticacao (Auth.js) e perfis de acesso ---
 
 model User {

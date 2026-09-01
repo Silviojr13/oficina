@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ShoppingCart, Trash2, Plus, Minus, Package, ArrowRight, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,11 +11,25 @@ import { SiteFooter } from '@/components/site-footer'
 import { useCartStore } from '@/lib/store'
 
 export default function CarrinhoPage() {
+  const router = useRouter()
   const { items, removeItem, updateQuantity, clearCart, getSubtotal, getTotal } = useCartStore()
 
   const subtotal = getSubtotal()
   const total = getTotal()
   const frete = subtotal >= 299 ? 0 : 29.90
+
+  // O site nao tem checkout/pagamento online - "Finalizar Pedido" manda um
+  // resumo do carrinho pro formulario de contato, que agora persiste de
+  // verdade (antes o botao nao tinha nenhum onClick, nao fazia nada).
+  const handleFinalizarPedido = () => {
+    const resumo = items
+      .map(({ produto, quantidade }) => `- ${quantidade}x ${produto.nome} (${produto.sku})`)
+      .join('\n')
+    const mensagem = `Quero fechar o pedido abaixo:\n\n${resumo}\n\nTotal estimado: R$ ${(total + frete).toFixed(2).replace('.', ',')}`
+
+    const params = new URLSearchParams({ assunto: 'pedido', mensagem })
+    router.push(`/contato?${params.toString()}`)
+  }
 
   if (items.length === 0) {
     return (
@@ -75,8 +90,17 @@ export default function CarrinhoPage() {
                     <CardContent className="p-4">
                       <div className="flex gap-4">
                         {/* Imagem */}
-                        <div className="w-24 h-24 bg-secondary rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Package className="h-10 w-10 text-muted-foreground/30" />
+                        <div className="relative w-24 h-24 bg-secondary rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+                          {produto.imagemPrincipal ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={produto.imagemPrincipal}
+                              alt={produto.nome}
+                              className="absolute inset-0 h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Package className="h-10 w-10 text-muted-foreground/30" />
+                          )}
                         </div>
 
                         {/* Info */}
@@ -196,11 +220,11 @@ export default function CarrinhoPage() {
                   </p>
                 </CardContent>
                 <CardFooter className="flex-col gap-3">
-                  <Button className="w-full" size="lg">
-                    Finalizar Compra
+                  <Button className="w-full" size="lg" onClick={handleFinalizarPedido}>
+                    Finalizar Pedido
                   </Button>
                   <p className="text-xs text-center text-muted-foreground">
-                    Pagamento 100% seguro. Aceitamos Pix, cartões e boleto.
+                    Enviamos o resumo do pedido pra gente e combinamos pagamento e entrega com você.
                   </p>
                 </CardFooter>
               </Card>

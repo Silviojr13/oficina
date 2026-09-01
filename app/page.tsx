@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Truck, Shield, CreditCard, Headphones, Wrench, Cog, Zap, Filter, CircleDot } from 'lucide-react'
+import { ArrowRight, Truck, Shield, CreditCard, Headphones, Wrench, Cog, Zap, Filter, CircleDot, Settings2, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { SiteHeader } from '@/components/site-header'
@@ -16,9 +16,11 @@ const categoryIcons: Record<string, React.ReactNode> = {
   motor: <Cog className="h-8 w-8" />,
   freios: <CircleDot className="h-8 w-8" />,
   suspensao: <Wrench className="h-8 w-8" />,
+  transmissao: <Settings2 className="h-8 w-8" />,
   eletrica: <Zap className="h-8 w-8" />,
   filtros: <Filter className="h-8 w-8" />,
 }
+const categoryIconFallback = <Settings className="h-8 w-8" />
 
 const features = [
   {
@@ -132,7 +134,7 @@ export default async function HomePage() {
                   <Card className="group hover:border-primary/50 transition-colors cursor-pointer h-full">
                     <CardContent className="p-6 flex flex-col items-center text-center">
                       <div className="mb-3 text-muted-foreground group-hover:text-primary transition-colors">
-                        {categoryIcons[categoria.id] || <Cog className="h-8 w-8" />}
+                        {categoryIcons[categoria.id] || categoryIconFallback}
                       </div>
                       <h3 className="font-medium text-sm group-hover:text-primary transition-colors">
                         {categoria.nome}

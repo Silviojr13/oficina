@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Search, SlidersHorizontal, X, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -176,15 +177,20 @@ function FilterContent({
 }
 
 
-export default function ProdutosPage() {
+function ProdutosContent() {
+  // Home, footer e o header (busca) linkam pra ca com ?categoria=, ?busca=
+  // e ?promocao= - antes nenhum desses parametros era lido, entao todo link
+  // "ver produtos dessa categoria" caia no catalogo inteiro sem filtro.
+  const searchParams = useSearchParams()
+
   const [produtos, setProdutos] = useState<Produto[]>([])
-  const [search, setSearch] = useState('')
-  const [selectedCategoria, setSelectedCategoria] = useState<string>('')
+  const [search, setSearch] = useState(searchParams.get('busca') ?? '')
+  const [selectedCategoria, setSelectedCategoria] = useState<string>(searchParams.get('categoria') ?? '')
   const [selectedMarcas, setSelectedMarcas] = useState<string[]>([])
   const [precoMin, setPrecoMin] = useState('')
   const [precoMax, setPrecoMax] = useState('')
   const [ordenacao, setOrdenacao] = useState('relevancia')
-  const [apenasPromocao, setApenasPromocao] = useState(false)
+  const [apenasPromocao, setApenasPromocao] = useState(searchParams.get('promocao') === 'true')
   const [apenasEstoque, setApenasEstoque] = useState(true)
 
   useEffect(() => {
@@ -439,5 +445,13 @@ export default function ProdutosPage() {
 
       <SiteFooter />
     </div>
+  )
+}
+
+export default function ProdutosPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProdutosContent />
+    </Suspense>
   )
 }

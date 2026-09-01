@@ -1,15 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
-import { ShoppingCart, Menu, X, Phone, Search, Wrench } from 'lucide-react'
+import { ShoppingCart, Menu, Phone, Search, Wrench } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useCartStore } from '@/lib/store'
+import { cn } from '@/lib/utils'
 
 const navLinks = [
   { href: '/', label: 'Início' },
@@ -18,12 +19,21 @@ const navLinks = [
 ]
 
 export function SiteHeader() {
+  const router = useRouter()
+  const pathname = usePathname()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const itemCount = useCartStore((state) => state.getItemCount())
   const { data: session } = useSession()
   const user = session?.user
   const isStaff = user?.role === 'admin' || user?.role === 'funcionario'
-  const pathname = usePathname()
+
+  const buscar = (termo: string) => {
+    const termoLimpo = termo.trim()
+    router.push(termoLimpo ? `/produtos?busca=${encodeURIComponent(termoLimpo)}` : '/produtos')
+    setIsSearchOpen(false)
+  }
+
+  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href))
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -72,16 +82,24 @@ export function SiteHeader() {
           </Link>
 
           {/* Search bar - Desktop */}
-          <div className="hidden flex-1 max-w-xl md:block">
+          <form
+            className="hidden flex-1 max-w-xl md:block"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const input = e.currentTarget.elements.namedItem('busca') as HTMLInputElement
+              buscar(input.value)
+            }}
+          >
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
+                name="busca"
                 placeholder="Buscar peças por nome, código ou veículo..."
                 className="pl-10 bg-secondary border-border"
               />
             </div>
-          </div>
+          </form>
 
           {/* Actions */}
           <div className="flex items-center gap-2">
@@ -90,13 +108,15 @@ export function SiteHeader() {
               variant="ghost"
               size="icon"
               className="md:hidden"
+              aria-label={isSearchOpen ? 'Fechar busca' : 'Buscar produtos'}
+              aria-expanded={isSearchOpen}
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
               <Search className="h-5 w-5" />
             </Button>
 
             {/* Cart */}
-            <Link href="/carrinho">
+            <Link href="/carrinho" aria-label={`Carrinho${itemCount > 0 ? `, ${itemCount} ${itemCount === 1 ? 'item' : 'itens'}` : ''}`}>
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
                 {itemCount > 0 && (
@@ -111,7 +131,11 @@ export function SiteHeader() {
             <nav className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href}>
-                  <Button variant="ghost" size="sm">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(isActive(link.href) && 'bg-secondary text-foreground')}
+                  >
                     {link.label}
                   </Button>
                 </Link>
@@ -121,7 +145,7 @@ export function SiteHeader() {
             {/* Mobile menu */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menu">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -129,7 +153,10 @@ export function SiteHeader() {
                 <nav className="flex flex-col gap-2 mt-8">
                   {navLinks.map((link) => (
                     <Link key={link.href} href={link.href}>
-                      <Button variant="ghost" className="w-full justify-start">
+                      <Button
+                        variant="ghost"
+                        className={cn('w-full justify-start', isActive(link.href) && 'bg-secondary text-foreground')}
+                      >
                         {link.label}
                       </Button>
                     </Link>
@@ -142,17 +169,25 @@ export function SiteHeader() {
 
         {/* Mobile search bar */}
         {isSearchOpen && (
-          <div className="pb-4 md:hidden">
+          <form
+            className="pb-4 md:hidden"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const input = e.currentTarget.elements.namedItem('busca-mobile') as HTMLInputElement
+              buscar(input.value)
+            }}
+          >
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
+                name="busca-mobile"
                 placeholder="Buscar peças..."
                 className="pl-10 bg-secondary border-border"
                 autoFocus
               />
             </div>
-          </div>
+          </form>
         )}
       </div>
     </header>

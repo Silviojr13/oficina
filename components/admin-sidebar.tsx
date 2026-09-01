@@ -21,6 +21,7 @@ import {
   Sun,
   Moon,
   UserCog,
+  MessageSquare,
 } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,7 @@ const navGroups = [
     items: [
       { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/admin/ordens-servico', label: 'Ordens de Serviço', icon: ClipboardList },
+      { href: '/admin/mensagens', label: 'Mensagens', icon: MessageSquare },
     ],
   },
   {
