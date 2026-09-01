@@ -20,19 +20,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: '/login',
   },
   callbacks: {
-    // Promove pra admin automaticamente no primeiro login, se o e-mail estiver
-    // em ADMIN_EMAILS - resolve o problema de "quem promove o primeiro admin".
-    // Depois disso, outros usuarios sao promovidos manualmente em /admin/usuarios.
-    async signIn({ user }) {
-      if (user.email && isAdminEmail(user.email) && user.id && (user as { role?: string }).role !== 'admin') {
-        await prisma.user.update({ where: { id: user.id }, data: { role: 'admin' } });
-        (user as { role?: string }).role = 'admin';
-      }
-      return true;
-    },
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as { role?: string }).role ?? 'cliente';
+        let role = (user as { role?: string }).role ?? 'cliente';
+
+        // Promove pra admin automaticamente no primeiro login, se o e-mail
+        // estiver em ADMIN_EMAILS - resolve o problema de "quem promove o
+        // primeiro admin". Depois disso, outros usuarios sao promovidos
+        // manualmente em /admin/usuarios.
+        //
+        // Isso precisa acontecer aqui, no jwt callback, e nao no signIn
+        // callback: com o PrismaAdapter, o signIn callback roda ANTES do
+        // adapter terminar de criar/vincular o usuario no banco, entao
+        // "user.id" ainda nao existe como linha real - um
+        // prisma.user.update() ali falhava com "No record was found for
+        // an update" e derrubava o login inteiro (erro AccessDenied).
+        // O jwt callback roda depois desse passo, com o usuario ja
+        // persistido de verdade.
+        if (user.email && user.id && isAdminEmail(user.email) && role !== 'admin') {
+          try {
+            await prisma.user.update({ where: { id: user.id }, data: { role: 'admin' } });
+            role = 'admin';
+          } catch (error) {
+            console.error('Erro ao promover usuário para admin:', error);
+          }
+        }
+
+        token.role = role;
       }
       return token;
     },
