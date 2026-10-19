@@ -112,7 +112,7 @@ export function ConfigurarMercadoLivre({ status }: { status: Status }) {
                     </Button>
                   </div>
                 </li>
-                <li>Em <strong>Escopos</strong>, marque <strong>leitura e escrita</strong> e o acesso <strong>offline</strong> (para o sistema renovar a conexão sozinho).</li>
+                <li>Em <strong>Escopos</strong>, marque <strong>leitura e escrita</strong> e <strong>acesso offline</strong>. Sem o acesso offline a conexão cai a cada 6 horas.</li>
                 <li>
                   Em <strong>Configuração de notificações</strong>, no campo <strong>URL de retornos de chamada de notificação</strong>, cole:
                   <div className="mt-1.5 flex gap-2">

@@ -11,7 +11,8 @@ export const SITE_ID = 'MLB'; // Brasil
 
 export type TokenResponse = {
   access_token: string;
-  refresh_token: string;
+  // So vem quando o aplicativo tem o escopo de acesso offline.
+  refresh_token?: string;
   expires_in: number;
   user_id: number;
 };
@@ -55,7 +56,7 @@ export async function saveToken(data: TokenResponse) {
       where: { id: existing.id },
       data: {
         accessToken: data.access_token,
-        refreshToken: data.refresh_token,
+        refreshToken: data.refresh_token ?? '',
         userId: String(data.user_id),
         expiresAt,
       },
@@ -64,7 +65,7 @@ export async function saveToken(data: TokenResponse) {
     await prisma.mercadoLivreToken.create({
       data: {
         accessToken: data.access_token,
-        refreshToken: data.refresh_token,
+        refreshToken: data.refresh_token ?? '',
         userId: String(data.user_id),
         expiresAt,
       },
@@ -81,6 +82,12 @@ export async function getValidAccessToken(): Promise<string> {
   const margemSegurancaMs = 5 * 60 * 1000; // renova 5 min antes de expirar
   if (token.expiresAt.getTime() - margemSegurancaMs > Date.now()) {
     return token.accessToken;
+  }
+
+  // Sem refresh token (aplicativo sem o escopo offline) nao da para renovar:
+  // a conexao vale ~6 horas e depois precisa reconectar.
+  if (!token.refreshToken) {
+    throw new Error('A conexão com o Mercado Livre expirou. Ative o "acesso offline" no aplicativo do Mercado Livre e reconecte em Integrações.');
   }
 
   const { clientId, clientSecret } = await getCredentials();
