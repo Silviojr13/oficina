@@ -53,6 +53,10 @@ model Produto {
   dataInicioPromocao     DateTime?
   dataFimPromocao        DateTime?
   exibirNoSite           Boolean                    @default(false)
+  // false = arquivado ("saiu de linha"): some do estoque, das buscas e da
+  // loja, mas continua nas vendas, compras e OS antigas. Produto com
+  // historico nao pode ser excluido, so arquivado.
+  ativo                  Boolean                    @default(true)
   destaqueHome           Boolean                    @default(false)
   aliquotaICMS           Float?
   aliquotaIPI            Float?

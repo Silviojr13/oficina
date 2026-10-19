@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { Search, Plus, Pencil, Trash2, X, PackageSearch, Package, Globe, Wrench, AlertTriangle, type LucideIcon } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, PackageSearch, Package, Globe, Wrench, AlertTriangle, Archive, type LucideIcon } from 'lucide-react';
 import { AdminHeader } from '@/components/admin-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { BotaoLeitor } from '@/components/admin/leitor-codigo-barras';
-import { getProdutos, deleteProduto, buscarProdutoPorCodigo } from '@/lib/actions/produtos';
+import { getProdutos, deleteProduto, arquivarProduto, buscarProdutoPorCodigo } from '@/lib/actions/produtos';
 import { categorias } from '@/lib/constants';
 import { textoDeBusca, combinaBusca } from '@/lib/busca';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,7 @@ type ProdutoEstoque = {
   precoVendaBalcao: number | null;
   precoSite: number | null;
   exibirNoSite: boolean;
+  ativo: boolean;
   mercadoLivreStatus: string | null;
   mercadoLivreErro: string | null;
 };
@@ -73,10 +74,15 @@ export default function EstoquePage({ searchParams }: { searchParams: Promise<{ 
   const [busca, setBusca] = useState('');
   const [categoria, setCategoria] = useState('todas');
   const [paraExcluir, setParaExcluir] = useState<ProdutoEstoque | null>(null);
+  // Arquivados ("saiu de linha") ficam fora das abas; aparecem so aqui.
+  const [verArquivados, setVerArquivados] = useState(false);
+  const [todos, setTodos] = useState<ProdutoEstoque[]>([]);
 
   const carregar = () =>
-    getProdutos(1, 1000).then((res) => {
-      setProdutos(res.data as unknown as ProdutoEstoque[]);
+    getProdutos(1, 1000, undefined, true).then((res) => {
+      const lista = res.data as unknown as ProdutoEstoque[];
+      setTodos(lista);
+      setProdutos(lista.filter((p) => p.ativo !== false));
       setCarregando(false);
     });
 
@@ -94,14 +100,17 @@ export default function EstoquePage({ searchParams }: { searchParams: Promise<{ 
     [produtos]
   );
 
+  const arquivados = useMemo(() => todos.filter((p) => p.ativo === false), [todos]);
+
   const indice = useMemo(
-    () => produtos.map((p) => ({ p, texto: textoDeBusca(p.nome, p.marca, p.categoria, p.sku, p.codigoBarras, p.codigoOEM) })),
-    [produtos]
+    () => (verArquivados ? arquivados : produtos).map((p) => ({ p, texto: textoDeBusca(p.nome, p.marca, p.categoria, p.sku, p.codigoBarras, p.codigoOEM) })),
+    [produtos, arquivados, verArquivados]
   );
 
   const lista = useMemo(() => {
     const filtrados = indice
       .filter(({ p }) => {
+        if (verArquivados) return categoria === 'todas' || p.categoria === categoria;
         if (aba === 'online' && !p.exibirNoSite) return false;
         if (aba === 'oficina' && p.exibirNoSite) return false;
         if (aba === 'baixo' && situacaoEstoque(p) === 'ok') return false;
@@ -114,17 +123,33 @@ export default function EstoquePage({ searchParams }: { searchParams: Promise<{ 
     return aba === 'baixo'
       ? filtrados.sort((a, b) => a.estoqueAtual - b.estoqueAtual)
       : filtrados.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  }, [indice, aba, categoria, busca]);
+  }, [indice, aba, categoria, busca, verArquivados]);
 
   const escolherAba = (nova: Aba) => {
+    setVerArquivados(false);
     setAba(nova);
     router.replace(nova === 'todos' ? '/admin/estoque' : `/admin/estoque?aba=${nova}`, { scroll: false });
   };
 
   const excluir = async () => {
     if (!paraExcluir) return;
-    const resultado = await deleteProduto(paraExcluir.id);
-    if (!resultado.success) toast.error(`Não foi possível excluir: ${resultado.error}`);
+    const alvo = paraExcluir;
+    const resultado = await deleteProduto(alvo.id);
+    if (!resultado.success && 'emUso' in resultado && resultado.emUso) {
+      toast.error(`${alvo.nome} já tem vendas, compras ou OS e não pode ser excluído.`, {
+        description: 'Arquive: ele sai do estoque e da loja, mas o histórico fica.',
+        action: {
+          label: 'Arquivar',
+          onClick: async () => {
+            const r = await arquivarProduto(alvo.id, true);
+            if (r.success) {
+              toast.success(`${alvo.nome} arquivado.`);
+              await carregar();
+            } else toast.error(`Não foi possível arquivar: ${r.error}`);
+          },
+        },
+      });
+    } else if (!resultado.success) toast.error(`Não foi possível excluir: ${resultado.error}`);
     else {
       toast.success('Produto excluído.');
       await carregar();
@@ -150,7 +175,7 @@ export default function EstoquePage({ searchParams }: { searchParams: Promise<{ 
         {/* Os resumos sao tambem as abas: tocar filtra a lista. */}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" role="tablist" aria-label="Filtrar estoque">
           {ABAS.map(({ id, rotulo, descricao, icone: Icone }) => {
-            const ativo = aba === id;
+            const ativo = !verArquivados && aba === id;
             const alerta = id === 'baixo' && contagem.baixo > 0;
             return (
               <button
@@ -208,6 +233,17 @@ export default function EstoquePage({ searchParams }: { searchParams: Promise<{ 
           </Button>
         </div>
 
+        {(arquivados.length > 0 || verArquivados) && (
+          <button
+            type="button"
+            onClick={() => setVerArquivados((v) => !v)}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <Archive className="h-4 w-4" />
+            {verArquivados ? 'Voltar ao estoque' : `Ver arquivados (${arquivados.length})`}
+          </button>
+        )}
+
         {carregando ? (
           <p className="py-12 text-center text-sm text-muted-foreground">Carregando o estoque...</p>
         ) : lista.length === 0 ? (
@@ -219,7 +255,9 @@ export default function EstoquePage({ searchParams }: { searchParams: Promise<{ 
           </Card>
         ) : (
           <>
-            <p className="text-xs text-muted-foreground">{lista.length} produto{lista.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-muted-foreground">
+              {verArquivados ? 'Arquivados: ' : ''}{lista.length} produto{lista.length !== 1 ? 's' : ''}
+            </p>
 
             {/* Celular: cartoes. Uma tabela de 9 colunas so rolava de lado. */}
             <ul className="space-y-2 md:hidden">

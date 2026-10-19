@@ -31,6 +31,7 @@ export async function buscarProdutoPorCodigo(codigo: string) {
         imagemPrincipal: true,
         estoqueAtual: true,
         estoqueMinimo: true,
+        ativo: true,
         localizacaoEstoque: true,
         setorAlmoxarifado: true,
         precoVendaBalcao: true,
@@ -81,7 +82,7 @@ export async function getProdutoBySlug(slug: string) {
       },
     });
 
-    if (!produto) {
+    if (!produto || !produto.ativo) {
       return null;
     }
 
@@ -102,7 +103,7 @@ export async function getProdutoBySlug(slug: string) {
 export async function getProdutosPublicos() {
   try {
     const produtos = await prisma.produto.findMany({
-      where: { exibirNoSite: true },
+      where: { exibirNoSite: true, ativo: true },
       orderBy: { createdAt: 'desc' },
       include: {
         veiculosCompativeis: true,
@@ -122,11 +123,14 @@ export async function getProdutosPublicos() {
   }
 }
 
-export async function getProdutos(page: number = 1, limit: number = 10, search?: string) {
+// Arquivados ("saiu de linha") ficam fora por padrao: nao aparecem para
+// escolher em venda, compra ou OS. A tela de Estoque pede com
+// incluirArquivados para poder reativar.
+export async function getProdutos(page: number = 1, limit: number = 10, search?: string, incluirArquivados = false) {
   try {
     const skip = (page - 1) * limit;
 
-    let whereClause: any = {};
+    let whereClause: any = incluirArquivados ? {} : { ativo: true };
     if (search) {
       whereClause.nome = {
         contains: search,
@@ -298,12 +302,35 @@ export async function deleteProduto(id: string) {
     // que nao pode ser apagado. Traduz pra uma mensagem que o usuario entenda.
     const mensagemOriginal = error instanceof Error ? error.message : 'Erro desconhecido';
     if (mensagemOriginal.includes('FOREIGN KEY constraint failed')) {
+      // emUso: a tela oferece arquivar no lugar de excluir.
       return {
         success: false,
-        error: 'Este produto já foi usado em vendas, compras ou ordens de serviço e não pode ser excluído. Desmarque "Exibir no Site" para desativá-lo em vez de excluir.',
+        emUso: true,
+        error: 'Este produto já aparece em vendas, compras ou ordens de serviço, então não pode ser excluído sem apagar esse histórico. Arquive-o: ele some do estoque e da loja, mas o histórico fica.',
       };
     }
 
     return { success: false, error: mensagemOriginal };
+  }
+}
+
+// "Saiu de linha": tira o produto do estoque, das buscas e da loja sem
+// apagar o historico. Tambem tira do site (exibirNoSite) para nao voltar
+// a aparecer na loja se for reativado sem querer.
+export async function arquivarProduto(id: string, arquivar: boolean) {
+  try {
+    await requireAdmin();
+    await prisma.produto.update({
+      where: { id },
+      data: arquivar ? { ativo: false, exibirNoSite: false } : { ativo: true },
+    });
+
+    revalidatePath('/admin/estoque');
+    revalidatePath('/');
+    revalidatePath('/produtos');
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao arquivar produto:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
   }
 }
