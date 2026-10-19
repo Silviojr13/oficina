@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   const produtosEmPromocao = await prisma.produto.findMany({
     where: {
       exibirNoSite: true,
+      ativo: true,
       precoPromocional: { not: null },
     },
     orderBy: { createdAt: 'desc' },

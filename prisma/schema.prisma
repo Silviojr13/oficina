@@ -53,6 +53,10 @@ model Produto {
   dataInicioPromocao     DateTime?
   dataFimPromocao        DateTime?
   exibirNoSite           Boolean                    @default(false)
+  // false = arquivado ("saiu de linha"): some do estoque, das buscas e da
+  // loja, mas continua nas vendas, compras e OS antigas. Produto com
+  // historico nao pode ser excluido, so arquivado.
+  ativo                  Boolean                    @default(true)
   destaqueHome           Boolean                    @default(false)
   aliquotaICMS           Float?
   aliquotaIPI            Float?
@@ -443,4 +447,12 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// Preferencias do sistema em chave/valor (JSON no valor). Ex.: margens de
+// lucro padrao usadas no cadastro de produto.
+model Configuracao {
+  chave     String   @id
+  valor     String
+  updatedAt DateTime @updatedAt
 }

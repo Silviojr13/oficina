@@ -21,10 +21,12 @@ export const categorias = [
   { id: 'lubrificantes', nome: 'Lubrificantes', subcategorias: ['Óleos de Motor', 'Óleos de Câmbio', 'Fluidos de Freio', 'Aditivos'] },
 ];
 
+// Sugestoes do campo Marca no cadastro - o campo aceita qualquer nome.
 export const marcas = [
-  'Bosch', 'NGK', 'Cofap', 'Mahle', 'Monroe', 'Gates', 'Sachs', 'TRW',
-  'Fremax', 'Mann Filter', 'Indisa', 'Nakata', 'Moura', 'Visconde',
-  'Sampel', 'Victor Reinz', 'Fitam', 'Mobil', 'Shell', 'Castrol',
+  'Bosch', 'NGK', 'Cofap', 'Mahle', 'Metal Leve', 'Monroe', 'Gates', 'Sachs', 'TRW',
+  'Fremax', 'Mann Filter', 'Tecfil', 'Fram', 'Wega', 'Vox', 'Hengst', 'Indisa', 'Nakata',
+  'Moura', 'Heliar', 'Visconde', 'Sampel', 'Victor Reinz', 'Fitam', 'SKF', 'Valeo',
+  'Magneti Marelli', 'Continental', 'Dayco', 'Mobil', 'Shell', 'Castrol', 'Lubrax',
 ];
 
 export const montadoras = [

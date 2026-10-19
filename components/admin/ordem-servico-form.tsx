@@ -498,9 +498,12 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
                 <tbody>
                   {itens.map((item, index) => {
                     const produto = produtos.find((p) => p.id === item.produtoId);
+                    // Peca arquivada depois de usada nao vem na lista de produtos;
+                    // o nome sai da propria OS.
+                    const nome = produto?.nome ?? initialData?.itens?.find((i: any) => i.produtoId === item.produtoId)?.produto?.nome;
                     return (
                       <tr key={index} className="border-b">
-                        <td className="py-2">{produto?.nome}</td>
+                        <td className="py-2">{nome ?? 'Produto arquivado'}</td>
                         <td className="py-2 w-16 whitespace-nowrap">x{item.quantidade}</td>
                         <td className="py-2 w-32 whitespace-nowrap">R$ {item.valorTotal.toFixed(2).replace('.', ',')}</td>
                         <td className="py-2 w-10">
