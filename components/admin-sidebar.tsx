@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   ClipboardList,
-  Package,
   Boxes,
   ShoppingCart,
   TrendingUp,
@@ -18,19 +17,25 @@ import {
   Wallet,
   Users,
   Plug,
-  Sun,
-  Moon,
   UserCog,
   MessageSquare,
   Contact,
-  ScanBarcode,
+  type LucideIcon,
 } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
 import { useAdminUI } from '@/components/admin-theme-provider'
 
-const navGroups = [
+type ItemMenu = {
+  href: string
+  label: string
+  icon: LucideIcon
+  adminOnly?: boolean
+  // Outras rotas que contam como "esta tela" para destacar o item.
+  tambemAtivoEm?: string[]
+}
+
+const navGroups: { label: string; items: ItemMenu[] }[] = [
   {
     label: 'Oficina',
     items: [
@@ -43,9 +48,10 @@ const navGroups = [
   {
     label: 'Estoque & Compras',
     items: [
-      { href: '/admin/scanner', label: 'Scanner', icon: ScanBarcode },
-      { href: '/admin/produtos', label: 'Produtos', icon: Package },
-      { href: '/admin/estoque', label: 'Estoque', icon: Boxes, alert: 3 },
+      // Produtos e estoque sao a mesma coisa vista de dois lados: uma aba so,
+      // com a separacao loja online / so na oficina la dentro. O scanner
+      // fica no icone do topo.
+      { href: '/admin/estoque', label: 'Estoque', icon: Boxes, tambemAtivoEm: ['/admin/produtos', '/admin/scanner'] },
       { href: '/admin/compras', label: 'Compras', icon: TrendingUp },
       { href: '/admin/fornecedores', label: 'Fornecedores', icon: Truck },
     ],
@@ -70,7 +76,7 @@ const navGroups = [
 
 export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolean }) {
   const pathname = usePathname()
-  const { theme, toggleTheme, collapsed: sharedCollapsed, setCollapsed } = useAdminUI()
+  const { collapsed: sharedCollapsed, setCollapsed } = useAdminUI()
   const collapsed = forceExpanded ? false : sharedCollapsed
   const { data: session } = useSession()
   const isAdmin = session?.user?.role === 'admin'
@@ -108,7 +114,7 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
         {/* Navigation */}
         <nav className="flex-1 space-y-5 overflow-y-auto p-3">
           {navGroups.map((group) => {
-            const items = group.items.filter((item) => !('adminOnly' in item && item.adminOnly) || isAdmin)
+            const items = group.items.filter((item) => !item.adminOnly || isAdmin)
             if (items.length === 0) return null
 
             return (
@@ -120,7 +126,9 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
               )}
               <div className="space-y-0.5">
                 {items.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                  const isActive = [item.href, ...(item.tambemAtivoEm ?? [])].some(
+                    (rota) => pathname === rota || pathname.startsWith(`${rota}/`)
+                  )
                   const Icon = item.icon
 
                   return (
@@ -137,19 +145,7 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
                           <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r bg-sidebar-primary" />
                         )}
                         <Icon className="h-[18px] w-[18px] flex-shrink-0" />
-                        {!collapsed && (
-                          <>
-                            <span className="flex-1 truncate">{item.label}</span>
-                            {'alert' in item && item.alert && item.alert > 0 && (
-                              <Badge variant="destructive" className="h-5 w-5 flex-shrink-0 rounded-full p-0 text-xs flex items-center justify-center">
-                                {item.alert}
-                              </Badge>
-                            )}
-                          </>
-                        )}
-                        {collapsed && 'alert' in item && item.alert && item.alert > 0 && (
-                          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" />
-                        )}
+                        {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
                       </div>
                     </Link>
                   )
@@ -162,16 +158,6 @@ export function AdminSidebar({ forceExpanded = false }: { forceExpanded?: boolea
 
         {/* Footer */}
         <div className="border-t border-sidebar-border p-2 space-y-0.5">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
-          >
-            {theme === 'dark' ? <Sun className="h-4 w-4 flex-shrink-0" /> : <Moon className="h-4 w-4 flex-shrink-0" />}
-            {!collapsed && <span>{theme === 'dark' ? 'Tema claro' : 'Tema escuro'}</span>}
-          </button>
-
           {!forceExpanded && (
             <button
               type="button"

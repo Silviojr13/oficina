@@ -47,6 +47,20 @@ export function AdminThemeProvider({ children }: { children: React.ReactNode }) 
     }
   }, [theme, mounted]);
 
+  // Menus, dialogos e o menu lateral do celular sao desenhados fora desta
+  // div (em portais no <body>), entao nao herdavam o tema: ficavam com as
+  // cores escuras da loja mesmo no tema claro. Com as classes no <html>,
+  // tudo que aparece enquanto o painel esta aberto pega o tema certo.
+  useEffect(() => {
+    if (!mounted) return;
+    const html = document.documentElement;
+    html.classList.add('theme-oficina');
+    html.classList.toggle('dark', theme === 'dark');
+    return () => {
+      html.classList.remove('theme-oficina', 'dark');
+    };
+  }, [theme, mounted]);
+
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 
   const setCollapsed = (value: boolean) => {
