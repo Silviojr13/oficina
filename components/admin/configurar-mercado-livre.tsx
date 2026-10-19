@@ -64,7 +64,7 @@ export function ConfigurarMercadoLivre({ status }: { status: Status }) {
           )}
         </CardTitle>
         <CardDescription>
-          Conectado, todo produto cadastrado com preço e estoque é publicado como anúncio no Mercado Livre.
+          Conectado, todo produto novo marcado para a loja online (com preço e estoque) é publicado no Mercado Livre. Os demais você publica pelo botão na tela do produto.
           {status.contaId && ` Conta vendedora nº ${status.contaId}.`}
         </CardDescription>
       </CardHeader>

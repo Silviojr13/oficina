@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
-import { criarAnuncioMercadoLivre } from '../mercado-livre';
+import { criarAnuncioMercadoLivre, atualizarAnuncioMercadoLivre } from '../mercado-livre-anuncios';
 import { parseDateFields } from '../prisma-helpers';
 import { requireAdmin, requireStaff } from '../auth-guard';
 
@@ -238,9 +238,14 @@ export async function createProduto(data: any) {
       },
     });
 
-    sincronizarComMercadoLivre(produto.id).catch((error) => {
-      console.error('Erro ao sincronizar produto com Mercado Livre:', error);
-    });
+    // So publica sozinho o que foi marcado para a loja online - peca de uso
+    // interno da oficina nao vira anuncio. As outras se publicam pelo botao
+    // na tela do produto.
+    if (produto.exibirNoSite) {
+      sincronizarComMercadoLivre(produto.id).catch((error) => {
+        console.error('Erro ao sincronizar produto com Mercado Livre:', error);
+      });
+    }
 
     revalidatePath('/admin/produtos');
     revalidatePath('/admin/produtos/novo');
@@ -282,10 +287,36 @@ async function sincronizarComMercadoLivre(produtoId: string) {
   revalidatePath('/admin/produtos');
 }
 
-export async function reenviarParaMercadoLivre(produtoId: string) {
-  await requireAdmin();
-  await sincronizarComMercadoLivre(produtoId);
-  revalidatePath('/admin/produtos');
+// Botao "Publicar no Mercado Livre" da tela do produto. Sem anuncio: cria.
+// Com anuncio: so atualiza preco e estoque (criar de novo duplicaria).
+export async function publicarNoMercadoLivre(produtoId: string) {
+  try {
+    await requireAdmin();
+    const produto = await prisma.produto.findUnique({ where: { id: produtoId } });
+    if (!produto) return { success: false, error: 'Produto não encontrado.' };
+
+    if (produto.mercadoLivreId) {
+      const preco = produto.precoSite ?? produto.precoVendaBalcao ?? 0;
+      const r = await atualizarAnuncioMercadoLivre(produto.mercadoLivreId, preco, produto.estoqueAtual);
+      await prisma.produto.update({
+        where: { id: produtoId },
+        data: r.success
+          ? { mercadoLivreStatus: 'sincronizado', mercadoLivreErro: null, mercadoLivreSyncEm: new Date() }
+          : { mercadoLivreStatus: 'erro', mercadoLivreErro: r.error, mercadoLivreSyncEm: new Date() },
+      });
+      revalidatePath('/admin/estoque');
+      return r.success ? { success: true, acao: 'atualizado' as const } : { success: false, error: r.error };
+    }
+
+    await sincronizarComMercadoLivre(produtoId);
+    const depois = await prisma.produto.findUnique({ where: { id: produtoId }, select: { mercadoLivreStatus: true, mercadoLivreErro: true, mercadoLivreId: true } });
+    revalidatePath('/admin/estoque');
+    return depois?.mercadoLivreStatus === 'sincronizado'
+      ? { success: true, acao: 'publicado' as const, mercadoLivreId: depois.mercadoLivreId }
+      : { success: false, error: depois?.mercadoLivreErro ?? 'O Mercado Livre não aceitou o anúncio.' };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
+  }
 }
 
 export async function updateProduto(id: string, data: any) {

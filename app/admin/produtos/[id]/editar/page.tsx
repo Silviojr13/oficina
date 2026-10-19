@@ -9,6 +9,7 @@ import { Produto } from '@/lib/types';
 import { toast } from 'sonner';
 import ProductForm from '@/components/admin/product-form';
 import { ExcluirProduto } from '@/components/admin/excluir-produto';
+import { PublicarMercadoLivre } from '@/components/admin/publicar-mercado-livre';
 
 export default function EditProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -50,6 +51,7 @@ export default function EditProductPage() {
       <AdminHeader title="Editar Produto" subtitle={initialData.nome ?? ''} />
       <main className="p-4 sm:p-6 space-y-6">
         <ProductForm initialData={initialData} onSubmit={handleSubmit} isEditing={true} fornecedores={fornecedores} />
+        <PublicarMercadoLivre produto={{ ...(initialData as any), id }} />
         <ExcluirProduto id={id} nome={initialData.nome ?? 'Produto'} ativo={(initialData as { ativo?: boolean }).ativo !== false} />
       </main>
     </>

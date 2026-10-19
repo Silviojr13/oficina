@@ -22,7 +22,7 @@ export default async function IntegracoesPage({
       <main className="max-w-3xl space-y-4 p-4 sm:p-6">
         {params.conectado && (
           <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">
-            Conta do Mercado Livre conectada. Os produtos com preço e estoque passam a ser publicados ao cadastrar.
+            Conta do Mercado Livre conectada. Para publicar um produto, abra-o e use o botão “Publicar no Mercado Livre”.
           </div>
         )}
         {params.erro && (
