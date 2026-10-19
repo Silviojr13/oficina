@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { Search, Plus, Pencil, Trash2, X, PackageSearch, Package, Globe, Wrench, AlertTriangle, Archive, type LucideIcon } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, PackageSearch, Package, Globe, Wrench, AlertTriangle, Archive, Settings2, type LucideIcon } from 'lucide-react';
 import { AdminHeader } from '@/components/admin-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -228,9 +228,14 @@ export default function EstoquePage({ searchParams }: { searchParams: Promise<{ 
             </Select>
             <BotaoLeitor onLeitura={lerCodigo} titulo="Encontrar produto pelo código" rotulo="Escanear" somenteIcone className="flex-shrink-0" />
           </div>
-          <Button asChild>
-            <Link href="/admin/produtos/novo"><Plus className="mr-1.5 h-4 w-4" /> Novo produto</Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline" size="icon" className="flex-shrink-0" title="Configurações do estoque">
+              <Link href="/admin/estoque/configuracoes" aria-label="Configurações do estoque"><Settings2 className="h-4 w-4" /></Link>
+            </Button>
+            <Button asChild className="flex-1 sm:flex-none">
+              <Link href="/admin/produtos/novo"><Plus className="mr-1.5 h-4 w-4" /> Novo produto</Link>
+            </Button>
+          </div>
         </div>
 
         {(arquivados.length > 0 || verArquivados) && (

@@ -448,3 +448,11 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+// Preferencias do sistema em chave/valor (JSON no valor). Ex.: margens de
+// lucro padrao usadas no cadastro de produto.
+model Configuracao {
+  chave     String   @id
+  valor     String
+  updatedAt DateTime @updatedAt
+}

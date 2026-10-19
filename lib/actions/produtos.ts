@@ -176,10 +176,50 @@ export async function getProdutos(page: number = 1, limit: number = 10, search?:
   }
 }
 
+function semAcento(texto: string) {
+  return texto.normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+// SKU e o codigo interno da oficina (nao vem na nota do fornecedor), entao o
+// sistema gera: 3 letras da categoria + sequencia. Filtros -> FIL-00001.
+async function gerarSku(categoria: string) {
+  const prefixo = semAcento(categoria ?? '').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'PRD';
+  const existentes = await prisma.produto.findMany({
+    where: { sku: { startsWith: `${prefixo}-` } },
+    select: { sku: true },
+  });
+  const maior = existentes.reduce((max, { sku }) => {
+    const n = parseInt(sku.slice(prefixo.length + 1), 10);
+    return Number.isFinite(n) && n > max ? n : max;
+  }, 0);
+  return `${prefixo}-${String(maior + 1).padStart(5, '0')}`;
+}
+
+// Endereco do produto na loja (/produto/<slug>), gerado do nome. Se ja
+// existir, acrescenta -2, -3...
+async function gerarSlugUnico(base: string, ignorarId?: string) {
+  const raiz =
+    semAcento(base ?? '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'produto';
+  for (let i = 1; ; i++) {
+    const slug = i === 1 ? raiz : `${raiz}-${i}`;
+    const existente = await prisma.produto.findUnique({ where: { slug }, select: { id: true } });
+    if (!existente || existente.id === ignorarId) return slug;
+  }
+}
+
 export async function createProduto(data: any) {
   try {
+    const sku = typeof data.sku === 'string' && data.sku.trim() ? data.sku.trim() : await gerarSku(data.categoria);
+    const slug = await gerarSlugUnico(data.slug || data.nome);
     const produtoData = {
       ...parseDateFields(data, ['dataInicioPromocao', 'dataFimPromocao']),
+      sku,
+      slug,
       referenciaCruzada: data.referenciaCruzada ? JSON.stringify(data.referenciaCruzada) : null,
       tags: data.tags ? JSON.stringify(data.tags) : null,
       fotos: data.fotos ? JSON.stringify(data.fotos) : null,

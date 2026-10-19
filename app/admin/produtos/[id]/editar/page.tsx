@@ -1,7 +1,6 @@
 'use client';
 
 import { AdminHeader } from '@/components/admin-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useParams, useRouter } from 'next/navigation';
 import { getProduto, updateProduto } from '@/lib/actions/produtos';
 import { getFornecedores } from '@/lib/actions/fornecedores';
@@ -50,14 +49,7 @@ export default function EditProductPage() {
     <>
       <AdminHeader title="Editar Produto" subtitle={initialData.nome ?? ''} />
       <main className="p-4 sm:p-6 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Dados do Produto</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProductForm initialData={initialData} onSubmit={handleSubmit} isEditing={true} fornecedores={fornecedores} />
-          </CardContent>
-        </Card>
+        <ProductForm initialData={initialData} onSubmit={handleSubmit} isEditing={true} fornecedores={fornecedores} />
         <ExcluirProduto id={id} nome={initialData.nome ?? 'Produto'} ativo={(initialData as { ativo?: boolean }).ativo !== false} />
       </main>
     </>
