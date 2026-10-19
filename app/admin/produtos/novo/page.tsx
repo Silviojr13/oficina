@@ -29,7 +29,7 @@ export default function NewProductPage({ searchParams }: { searchParams: Promise
       return;
     }
 
-    router.push('/admin/produtos');
+    router.push('/admin/estoque');
     toast.success('Produto criado com sucesso! Enviando para o Mercado Livre em segundo plano...');
   };
 

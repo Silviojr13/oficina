@@ -138,7 +138,7 @@ export default function DashboardPage() {
       value: kpis.produtosEmFalta,
       subtitle: 'Abaixo do estoque mínimo',
       icon: AlertTriangle,
-      href: '/admin/estoque',
+      href: '/admin/estoque?aba=baixo',
     },
     {
       title: 'Contas a Pagar',

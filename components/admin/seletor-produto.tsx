@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { LeitorCodigoBarras } from '@/components/admin/leitor-codigo-barras';
 import { encontrarProdutoPorCodigo } from '@/lib/produto-codigo';
 import { cn } from '@/lib/utils';
+import { textoDeBusca, combinaBusca } from '@/lib/busca';
 
 export type ProdutoSelecionavel = {
   id: string;
@@ -28,10 +29,6 @@ export type ProdutoSelecionavel = {
 // pede pra refinar a busca.
 const LIMITE_RESULTADOS = 60;
 
-// "oleo" acha "Óleo", "PASTILHA" acha "pastilha".
-function normalizar(texto: string) {
-  return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-}
 
 function formatarPreco(valor: number | null | undefined) {
   return `R$ ${(valor ?? 0).toFixed(2).replace('.', ',')}`;
@@ -91,14 +88,13 @@ function PainelBusca<T extends ProdutoSelecionavel>({
     () =>
       produtos.map((p) => ({
         produto: p,
-        texto: normalizar([p.nome, p.marca, p.categoria, p.sku, p.codigoBarras, p.codigoOEM].filter(Boolean).join(' ')),
+        texto: textoDeBusca(p.nome, p.marca, p.categoria, p.sku, p.codigoBarras, p.codigoOEM),
       })),
     [produtos]
   );
 
   const encontrados = useMemo(() => {
-    const palavras = normalizar(busca).split(/\s+/).filter(Boolean);
-    const lista = palavras.length ? indice.filter(({ texto }) => palavras.every((w) => texto.includes(w))) : indice;
+    const lista = busca.trim() ? indice.filter(({ texto }) => combinaBusca(texto, busca)) : indice;
     return lista.map(({ produto }) => produto).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   }, [indice, busca]);
 

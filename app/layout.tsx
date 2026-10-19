@@ -55,7 +55,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0a', // Updated to match the dark theme
+  themeColor: '#080b10', // fundo da loja (--background)
   width: 'device-width',
   initialScale: 1,
 }

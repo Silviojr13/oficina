@@ -42,7 +42,7 @@ export default function EditProductPage() {
       return;
     }
     toast.success('Produto atualizado com sucesso!');
-    router.push('/admin/produtos');
+    router.push('/admin/estoque');
   };
 
   return (
