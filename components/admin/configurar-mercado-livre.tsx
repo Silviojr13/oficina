@@ -112,7 +112,7 @@ export function ConfigurarMercadoLivre({ status }: { status: Status }) {
                     </Button>
                   </div>
                 </li>
-                <li>Em <strong>Escopos</strong>, marque <strong>leitura e escrita</strong> e <strong>acesso offline</strong>. Sem o acesso offline a conexão cai a cada 6 horas.</li>
+                <li>Em <strong>Permissões</strong>, deixe <strong>Leitura e escrita</strong> em Usuários, Comunicações pré e pós-vendas, anúncios e vendas. Em <strong>Fluxos OAuth</strong>, marque <strong>Authorization Code</strong> e <strong>Refresh Token</strong> — sem o Refresh Token a conexão cai a cada 6 horas.</li>
                 <li>
                   Em <strong>Configuração de notificações</strong>, no campo <strong>URL de retornos de chamada de notificação</strong>, cole:
                   <div className="mt-1.5 flex gap-2">
