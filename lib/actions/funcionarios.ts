@@ -3,7 +3,25 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { parseDateFields } from '../prisma-helpers';
-import { requireAdmin } from '../auth-guard';
+import { requireAdmin, requireStaff } from '../auth-guard';
+
+// Lista enxuta pro seletor de responsaveis da OS. Diferente de getFuncionarios,
+// que e so admin: qualquer pessoa da equipe precisa conseguir marcar quem
+// trabalhou numa OS, entao aqui e requireStaff e so vao os campos que o
+// seletor mostra - nada de salario, CPF ou endereco.
+export async function listarEquipeAtiva() {
+  try {
+    await requireStaff();
+    return await prisma.funcionario.findMany({
+      where: { status: 'ativo' },
+      orderBy: { nome: 'asc' },
+      select: { id: true, nome: true, cargo: true, setor: true },
+    });
+  } catch (error) {
+    console.error('Erro ao listar equipe ativa:', error);
+    return [];
+  }
+}
 
 export async function getFuncionario(id: string) {
   try {

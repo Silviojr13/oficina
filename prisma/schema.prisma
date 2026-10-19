@@ -106,6 +106,9 @@ model OrdemServico {
   // onDelete SetNull: apagar o cadastro nao pode apagar a OS (historico real).
   clienteId           String?
   veiculoId           String?
+  // Legado: um unico mecanico digitado a mao. Substituido por `responsaveis`
+  // (varias pessoas, ligadas ao cadastro de Funcionario quando existir).
+  // Mantido so para nao perder o historico ja gravado; nada mais escreve aqui.
   mecanicoResponsavel String?
   dataEntrada         DateTime           @default(now())
   dataPrevisaoEntrega DateTime?
@@ -126,6 +129,7 @@ model OrdemServico {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
   itens               ItemOrdemServico[]
+  responsaveis        ResponsavelOS[]
   cliente             Cliente?           @relation(fields: [clienteId], references: [id], onDelete: SetNull)
   veiculo             Veiculo?           @relation(fields: [veiculoId], references: [id], onDelete: SetNull)
 
@@ -180,6 +184,25 @@ model ItemOrdemServico {
 
   @@index([ordemServicoId])
   @@index([produtoId])
+}
+
+// Quem trabalhou na OS. Uma OS pode ter varias pessoas, e cada pessoa pode ou
+// nao estar no cadastro de Funcionario - mecanico terceirizado, ajudante do dia
+// ou quem ainda nao foi cadastrado entram so pelo nome, sem travar o
+// atendimento (mesma logica de cliente avulso na OS).
+// `nome` e sempre gravado como snapshot: se o funcionario for excluido do
+// cadastro depois, a OS continua mostrando quem fez o servico.
+model ResponsavelOS {
+  id             String       @id @default(cuid())
+  ordemServicoId String
+  funcionarioId  String?
+  nome           String
+  createdAt      DateTime     @default(now())
+  ordemServico   OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+  funcionario    Funcionario? @relation(fields: [funcionarioId], references: [id], onDelete: SetNull)
+
+  @@index([ordemServicoId])
+  @@index([funcionarioId])
 }
 
 model MercadoLivreToken {
@@ -268,6 +291,7 @@ model Funcionario {
   endereco           String?
   observacoes        String?
   createdAt          DateTime  @default(now())
+  ordensServico      ResponsavelOS[]
 }
 
 model SaidaEstoque {

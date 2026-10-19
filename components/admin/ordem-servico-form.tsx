@@ -15,6 +15,8 @@ import { Plus, Trash2, Search, X, Car, Clock, AlertTriangle } from 'lucide-react
 import type { Produto } from '@/lib/types';
 import { optionalNumber, avisarErroValidacao } from '@/lib/zod-helpers';
 import { searchClientes, getHistoricoPorPlaca } from '@/lib/actions/clientes';
+import { listarEquipeAtiva } from '@/lib/actions/funcionarios';
+import SeletorResponsaveis, { type MembroEquipe, type ResponsavelSelecionado } from './seletor-responsaveis';
 
 const statusLabels: Record<string, string> = {
   aberto: 'Aberta',
@@ -38,7 +40,6 @@ const ordemServicoSchema = z.object({
   clienteNome: z.string().min(1, 'Nome do cliente é obrigatório'),
   clienteTelefone: z.string().optional(),
   clienteCpfCnpj: z.string().optional(),
-  mecanicoResponsavel: z.string().optional(),
   dataEntrada: z.string().min(1, 'Data de entrada é obrigatória'),
   dataPrevisaoEntrega: z.string().optional(),
   problemaRelatado: z.string().optional(),
@@ -93,7 +94,6 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
       clienteNome: initialData?.clienteNome ?? '',
       clienteTelefone: initialData?.clienteTelefone ?? '',
       clienteCpfCnpj: initialData?.clienteCpfCnpj ?? '',
-      mecanicoResponsavel: initialData?.mecanicoResponsavel ?? '',
       problemaRelatado: initialData?.problemaRelatado ?? '',
       diagnostico: initialData?.diagnostico ?? '',
       codigoFalha: initialData?.codigoFalha ?? '',
@@ -134,6 +134,27 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
   );
   const [veiculoIdSelecionado, setVeiculoIdSelecionado] = useState<string | undefined>(initialData?.veiculoId ?? undefined);
   const [historico, setHistorico] = useState<HistoricoOS[]>([]);
+
+  // Responsaveis pela OS. Em OS antigas, antes da lista existir, o unico dado
+  // disponivel e o texto de mecanicoResponsavel - ele entra como avulso pra
+  // nao sumir da tela ao editar.
+  const [equipe, setEquipe] = useState<MembroEquipe[]>([]);
+  const [responsaveis, setResponsaveis] = useState<ResponsavelSelecionado[]>(() => {
+    if (initialData?.responsaveis?.length) {
+      return initialData.responsaveis.map((r: any) => ({
+        funcionarioId: r.funcionarioId ?? null,
+        nome: r.nome,
+      }));
+    }
+    if (initialData?.mecanicoResponsavel) {
+      return [{ funcionarioId: null, nome: initialData.mecanicoResponsavel }];
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    listarEquipeAtiva().then(setEquipe);
+  }, []);
 
   useEffect(() => {
     const termo = buscaCliente.trim();
@@ -232,6 +253,7 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
       clienteId: clienteSelecionado?.id ?? null,
       veiculoId: veiculoIdSelecionado ?? null,
       servicosRealizados: servicos,
+      responsaveis,
       itens: itens.map((i) => ({ produtoId: i.produtoId, quantidade: i.quantidade, valorUnitario: i.valorUnitario, valorTotal: i.valorTotal })),
       valorMaoDeObra,
       valorPecas,
@@ -400,7 +422,7 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
             <Label htmlFor="diagnostico">Diagnóstico da oficina</Label>
             <Textarea id="diagnostico" {...register('diagnostico')} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="codigoFalha">Código de falha (OBD2)</Label>
               <Input id="codigoFalha" className="font-mono" placeholder="Ex: P0301" {...register('codigoFalha')} />
@@ -409,11 +431,9 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
               <Label htmlFor="sistemaAfetado">Sistema afetado</Label>
               <Input id="sistemaAfetado" placeholder="Ex: Injeção, ABS, elétrica..." {...register('sistemaAfetado')} />
             </div>
-            <div>
-              <Label htmlFor="mecanicoResponsavel">Mecânico responsável</Label>
-              <Input id="mecanicoResponsavel" {...register('mecanicoResponsavel')} />
-            </div>
           </div>
+
+          <SeletorResponsaveis equipe={equipe} value={responsaveis} onChange={setResponsaveis} />
         </CardContent>
       </Card>
 
