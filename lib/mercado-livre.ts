@@ -36,9 +36,11 @@ async function getCredentials() {
 }
 
 // Endereco de retorno do login no Mercado Livre. Tem que ser exatamente o
-// cadastrado no aplicativo de la; vem do proprio dominio do site.
-function resolverRedirectUri(origem?: string) {
-  return process.env.MERCADOLIVRE_REDIRECT_URI || `${origem}/api/mercado-livre/callback`;
+// cadastrado no aplicativo de la; vem sempre do dominio em que o site esta
+// aberto. Nao usa mais MERCADOLIVRE_REDIRECT_URI: a da Vercel tinha sido
+// importada do .env local com "localhost" e aparecia em producao.
+function resolverRedirectUri(origem: string) {
+  return `${origem}/api/mercado-livre/callback`;
 }
 
 export async function getStatusMercadoLivre(origem: string) {
