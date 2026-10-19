@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    await exchangeCodeForToken(code);
+    await exchangeCodeForToken(code, request.nextUrl.origin);
     baseUrl.searchParams.set('conectado', '1');
   } catch (error) {
     baseUrl.searchParams.set('erro', error instanceof Error ? error.message : 'Erro desconhecido');
