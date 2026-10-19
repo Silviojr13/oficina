@@ -15,6 +15,7 @@ const assuntoLabels: Record<string, string> = {
   pedido: 'Fechar Pedido',
   acompanhar: 'Acompanhar Pedido',
   outros: 'Outros',
+  mercadolivre: 'Pergunta no Mercado Livre',
 };
 
 type Mensagem = {
@@ -85,7 +86,7 @@ export default function MensagensPage() {
 
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1.5">
-                      <Mail className="h-3.5 w-3.5" /> {msg.email}
+                      <Mail className="h-3.5 w-3.5" /> {msg.email || 'sem e-mail'}
                     </span>
                     {msg.telefone && (
                       <span className="flex items-center gap-1.5">

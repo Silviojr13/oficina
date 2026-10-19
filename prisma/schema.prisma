@@ -456,3 +456,16 @@ model Configuracao {
   valor     String
   updatedAt DateTime @updatedAt
 }
+
+// Avisos que o Mercado Livre manda (vendas, perguntas, anuncios). Guardados
+// para nao processar o mesmo duas vezes e para ter historico do que chegou.
+model NotificacaoMercadoLivre {
+  id         String   @id @default(cuid())
+  topico     String
+  recurso    String
+  processada Boolean  @default(false)
+  resultado  String?
+  createdAt  DateTime @default(now())
+
+  @@index([topico, recurso])
+}
