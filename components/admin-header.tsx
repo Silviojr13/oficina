@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Bell, Search, User, Menu, Plus, LogOut } from 'lucide-react'
+import { Bell, Search, User, Menu, Plus, LogOut, ScanBarcode } from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -66,6 +66,12 @@ export function AdminHeader({ title, subtitle }: AdminHeaderProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
+        <Button asChild variant="ghost" size="icon" title="Scanner">
+          <Link href="/admin/scanner" aria-label="Abrir scanner de código de barras">
+            <ScanBarcode className="h-5 w-5" />
+          </Link>
+        </Button>
+
         <Button asChild size="sm" className="hidden sm:inline-flex">
           <Link href="/admin/ordens-servico/nova">
             <Plus className="h-4 w-4 mr-1.5" /> Nova OS

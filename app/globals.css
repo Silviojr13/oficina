@@ -238,3 +238,15 @@
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.35 0 0);
 }
+
+/* Linha que corre no visor do leitor de codigo de barras */
+@keyframes leitor-varredura {
+  0%, 100% { transform: translateY(-1.6rem); opacity: 0.4; }
+  50% { transform: translateY(1.6rem); opacity: 1; }
+}
+.leitor-linha {
+  animation: leitor-varredura 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .leitor-linha { animation: none; }
+}

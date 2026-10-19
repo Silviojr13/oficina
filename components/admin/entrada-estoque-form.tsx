@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
 import type { Produto } from '@/lib/types';
 import { avisarErroValidacao } from '@/lib/zod-helpers';
+import { BotaoLeitor, type ResultadoLeitura } from '@/components/admin/leitor-codigo-barras';
+import { encontrarProdutoPorCodigo, mensagemCodigoNaoCadastrado } from '@/lib/produto-codigo';
 
 const tipoEntradaLabels: Record<string, string> = {
   compra: 'Compra',
@@ -90,6 +92,30 @@ export default function EntradaEstoqueForm({ produtos, fornecedores, initialData
     setValorUnitarioSelecionado('');
   };
 
+  // Leitura pela camera (modo continuo): cada etiqueta lida entra na nota com
+  // o custo de aquisicao cadastrado; ler a mesma peca de novo soma +1.
+  // Sem custo cadastrado, a peca vai pro seletor pra digitar o custo a mao.
+  const lerPeca = (codigo: string): ResultadoLeitura => {
+    const produto = encontrarProdutoPorCodigo(produtos, codigo);
+    if (!produto) return { tipo: 'erro', mensagem: mensagemCodigoNaoCadastrado(codigo) };
+
+    const custo = produto.custoAquisicao ?? 0;
+    if (!custo) {
+      setProdutoSelecionado(produto.id);
+      return { tipo: 'erro', mensagem: `${produto.nome} não tem custo cadastrado. Conclua a leitura e informe o custo unitário.` };
+    }
+
+    const quantidadeAtual = itens.find((i) => i.produtoId === produto.id)?.quantidade ?? 0;
+    setItens((atual) => {
+      const existente = atual.find((i) => i.produtoId === produto.id);
+      if (!existente) return [...atual, { produtoId: produto.id, quantidade: 1, valorUnitario: custo, valorTotal: custo }];
+      return atual.map((i) =>
+        i.produtoId === produto.id ? { ...i, quantidade: i.quantidade + 1, valorTotal: i.valorUnitario * (i.quantidade + 1) } : i
+      );
+    });
+    return { tipo: 'sucesso', mensagem: `${produto.nome} — ${quantidadeAtual + 1} un.` };
+  };
+
   const removerItem = (index: number) => setItens(itens.filter((_, i) => i !== index));
 
   const valorTotal = itens.reduce((sum, i) => sum + i.valorTotal, 0);
@@ -161,7 +187,7 @@ export default function EntradaEstoqueForm({ produtos, fornecedores, initialData
       <Card>
         <CardHeader><CardTitle>Itens da Nota</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_100px_120px_auto] gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_100px_120px_auto_auto] gap-2">
             <Select value={produtoSelecionado} onValueChange={setProdutoSelecionado}>
               <SelectTrigger><SelectValue placeholder="Selecione uma peça" /></SelectTrigger>
               <SelectContent>
@@ -173,6 +199,7 @@ export default function EntradaEstoqueForm({ produtos, fornecedores, initialData
             <Input type="number" min="1" placeholder="Qtd." value={quantidadeSelecionada} onChange={(e) => setQuantidadeSelecionada(e.target.value)} />
             <Input type="number" step="0.01" placeholder="Custo unit." value={valorUnitarioSelecionado} onChange={(e) => setValorUnitarioSelecionado(e.target.value)} />
             <Button type="button" variant="outline" onClick={adicionarItem}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
+            <BotaoLeitor onLeitura={lerPeca} continuo titulo="Bipar peças da nota" />
           </div>
           {itens.length > 0 && (
             <div className="overflow-x-auto">

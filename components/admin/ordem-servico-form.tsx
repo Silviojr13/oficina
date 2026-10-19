@@ -17,6 +17,8 @@ import { optionalNumber, avisarErroValidacao } from '@/lib/zod-helpers';
 import { searchClientes, getHistoricoPorPlaca } from '@/lib/actions/clientes';
 import { listarEquipeAtiva } from '@/lib/actions/funcionarios';
 import SeletorResponsaveis, { type MembroEquipe, type ResponsavelSelecionado } from './seletor-responsaveis';
+import { BotaoLeitor, type ResultadoLeitura } from './leitor-codigo-barras';
+import { encontrarProdutoPorCodigo, mensagemCodigoNaoCadastrado } from '@/lib/produto-codigo';
 
 const statusLabels: Record<string, string> = {
   aberto: 'Aberta',
@@ -237,6 +239,29 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
     ]);
     setProdutoSelecionado('');
     setQuantidadeSelecionada('1');
+  };
+
+  // Leitura pela camera (modo continuo): cada peca bipada entra na OS pelo
+  // preco de balcao; a mesma peca de novo soma +1.
+  const lerPeca = (codigo: string): ResultadoLeitura => {
+    const produto = encontrarProdutoPorCodigo(produtos, codigo);
+    if (!produto) return { tipo: 'erro', mensagem: mensagemCodigoNaoCadastrado(codigo) };
+
+    const valorUnitario = produto.precoVendaBalcao || produto.precoSite;
+    const quantidadeAtual = itens.find((i) => i.produtoId === produto.id)?.quantidade ?? 0;
+    setItens((atual) => {
+      const existente = atual.find((i) => i.produtoId === produto.id);
+      if (!existente) return [...atual, { produtoId: produto.id, quantidade: 1, valorUnitario, valorTotal: valorUnitario }];
+      return atual.map((i) =>
+        i.produtoId === produto.id ? { ...i, quantidade: i.quantidade + 1, valorTotal: i.valorUnitario * (i.quantidade + 1) } : i
+      );
+    });
+
+    const restante = produto.estoqueAtual - (quantidadeAtual + 1);
+    return {
+      tipo: 'sucesso',
+      mensagem: `${produto.nome} — ${quantidadeAtual + 1} un.${restante < 0 ? ' (acima do estoque atual)' : ''}`,
+    };
   };
 
   const removerPeca = (index: number) => setItens(itens.filter((_, i) => i !== index));
@@ -468,7 +493,7 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
       <Card>
         <CardHeader><CardTitle>Peças utilizadas</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_auto] gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_auto_auto] gap-2">
             <Select value={produtoSelecionado} onValueChange={setProdutoSelecionado}>
               <SelectTrigger><SelectValue placeholder="Selecione uma peça do estoque" /></SelectTrigger>
               <SelectContent>
@@ -479,6 +504,7 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
             </Select>
             <Input type="number" min="1" value={quantidadeSelecionada} onChange={(e) => setQuantidadeSelecionada(e.target.value)} />
             <Button type="button" variant="outline" onClick={adicionarPeca}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
+            <BotaoLeitor onLeitura={lerPeca} continuo titulo="Bipar peças da OS" />
           </div>
           {itens.length > 0 && (
             <div className="overflow-x-auto">

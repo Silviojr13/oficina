@@ -4,7 +4,46 @@ import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { criarAnuncioMercadoLivre } from '../mercado-livre';
 import { parseDateFields } from '../prisma-helpers';
-import { requireAdmin } from '../auth-guard';
+import { requireAdmin, requireStaff } from '../auth-guard';
+
+// Busca exata pelo que o leitor de codigo de barras devolve. Uma etiqueta
+// pode trazer o EAN do fabricante, o SKU interno ou o codigo OEM da peca,
+// entao procura nos tres. Comparacao exata (sem contains): um EAN-13 que
+// casa "pela metade" com outro produto seria pior do que nao achar nada.
+export async function buscarProdutoPorCodigo(codigo: string) {
+  try {
+    await requireStaff();
+    const termo = codigo?.trim();
+    if (!termo) return null;
+
+    return await prisma.produto.findFirst({
+      where: {
+        OR: [{ codigoBarras: termo }, { sku: termo }, { sku: termo.toUpperCase() }, { codigoOEM: termo }],
+      },
+      select: {
+        id: true,
+        nome: true,
+        sku: true,
+        codigoBarras: true,
+        codigoOEM: true,
+        marca: true,
+        categoria: true,
+        imagemPrincipal: true,
+        estoqueAtual: true,
+        estoqueMinimo: true,
+        localizacaoEstoque: true,
+        setorAlmoxarifado: true,
+        precoVendaBalcao: true,
+        precoSite: true,
+        // Sem custo/margem: funcionario tambem usa o scanner, e custo e dado
+        // financeiro que so o admin ve.
+      },
+    });
+  } catch (error) {
+    console.error('Erro ao buscar produto por código:', error);
+    return null;
+  }
+}
 
 export async function getProduto(id: string) {
   try {
