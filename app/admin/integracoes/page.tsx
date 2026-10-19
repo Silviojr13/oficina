@@ -1,9 +1,7 @@
+import { headers } from 'next/headers';
 import { AdminHeader } from '@/components/admin-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { isConectado } from '@/lib/mercado-livre';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { getStatusMercadoLivre } from '@/lib/mercado-livre';
+import { ConfigurarMercadoLivre } from '@/components/admin/configurar-mercado-livre';
 
 export default async function IntegracoesPage({
   searchParams,
@@ -11,44 +9,26 @@ export default async function IntegracoesPage({
   searchParams: Promise<{ conectado?: string; erro?: string }>;
 }) {
   const params = await searchParams;
-  const conectado = await isConectado();
+  // O endereco de retorno do Mercado Livre sai do dominio em que o site esta
+  // aberto (producao ou preview), para o passo a passo mostrar o valor certo.
+  const h = await headers();
+  const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
+  const protocolo = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+  const status = await getStatusMercadoLivre(`${protocolo}://${host}`);
 
   return (
     <>
       <AdminHeader title="Integrações" subtitle="Conecte o sistema a canais de venda externos" />
-      <main className="p-4 sm:p-6 space-y-6">
-      {params.conectado && (
-        <div className="rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
-          Conta do Mercado Livre conectada com sucesso.
-        </div>
-      )}
-      {params.erro && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-          Erro ao conectar: {params.erro}
-        </div>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Mercado Livre
-            {conectado ? (
-              <Badge variant="default" className="gap-1"><CheckCircle2 className="h-3 w-3" /> Conectado</Badge>
-            ) : (
-              <Badge variant="outline" className="gap-1"><XCircle className="h-3 w-3" /> Não conectado</Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Quando conectado, todo produto cadastrado com preço e estoque definidos é publicado
-            automaticamente como anúncio no Mercado Livre.
-          </p>
-          <a href="/api/mercado-livre/connect">
-            <Button>{conectado ? 'Reconectar conta do Mercado Livre' : 'Conectar ao Mercado Livre'}</Button>
-          </a>
-        </CardContent>
-      </Card>
+      <main className="max-w-3xl space-y-4 p-4 sm:p-6">
+        {params.conectado && (
+          <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">
+            Conta do Mercado Livre conectada. Os produtos com preço e estoque passam a ser publicados ao cadastrar.
+          </div>
+        )}
+        {params.erro && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{params.erro}</div>
+        )}
+        <ConfigurarMercadoLivre status={status} />
       </main>
     </>
   );

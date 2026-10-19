@@ -1,6 +1,7 @@
 'use server';
 
 import prisma from './prisma';
+import { requireAdmin } from './auth-guard';
 
 const ML_API = 'https://api.mercadolibre.com';
 const SITE_ID = 'MLB'; // Brasil
@@ -12,20 +13,69 @@ type TokenResponse = {
   user_id: number;
 };
 
-function getCredentials() {
-  const clientId = process.env.MERCADOLIVRE_CLIENT_ID;
-  const clientSecret = process.env.MERCADOLIVRE_CLIENT_SECRET;
-  const redirectUri = process.env.MERCADOLIVRE_REDIRECT_URI;
-  if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error(
-      'Mercado Livre não configurado: defina MERCADOLIVRE_CLIENT_ID, MERCADOLIVRE_CLIENT_SECRET e MERCADOLIVRE_REDIRECT_URI.'
-    );
+const CHAVE_CONFIG = 'mercadolivre';
+
+// Credenciais do aplicativo do Mercado Livre. Variaveis de ambiente (Vercel)
+// tem prioridade; se nao existirem, usa o que o admin salvou na tela de
+// Integracoes - assim da para configurar sem mexer na Vercel.
+async function getCredentials() {
+  let clientId = process.env.MERCADOLIVRE_CLIENT_ID;
+  let clientSecret = process.env.MERCADOLIVRE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    const linha = await prisma.configuracao.findUnique({ where: { chave: CHAVE_CONFIG } });
+    if (linha) {
+      const salvo = JSON.parse(linha.valor) as { clientId?: string; clientSecret?: string };
+      clientId = salvo.clientId;
+      clientSecret = salvo.clientSecret;
+    }
   }
-  return { clientId, clientSecret, redirectUri };
+  if (!clientId || !clientSecret) {
+    throw new Error('Mercado Livre ainda não configurado: informe o Client ID e o Client Secret em Integrações.');
+  }
+  return { clientId, clientSecret };
 }
 
-export async function getAuthorizationUrl() {
-  const { clientId, redirectUri } = getCredentials();
+// Endereco de retorno do login no Mercado Livre. Tem que ser exatamente o
+// cadastrado no aplicativo de la; vem do proprio dominio do site.
+function resolverRedirectUri(origem?: string) {
+  return process.env.MERCADOLIVRE_REDIRECT_URI || `${origem}/api/mercado-livre/callback`;
+}
+
+export async function getStatusMercadoLivre(origem: string) {
+  await requireAdmin();
+  const temEnv = !!(process.env.MERCADOLIVRE_CLIENT_ID && process.env.MERCADOLIVRE_CLIENT_SECRET);
+  const linha = await prisma.configuracao.findUnique({ where: { chave: CHAVE_CONFIG } });
+  const salvo = linha ? (JSON.parse(linha.valor) as { clientId?: string }) : null;
+  const clientId = temEnv ? process.env.MERCADOLIVRE_CLIENT_ID! : salvo?.clientId;
+  const token = await prisma.mercadoLivreToken.findFirst({ orderBy: { createdAt: 'desc' } });
+  return {
+    configurado: !!clientId,
+    origem: temEnv ? ('vercel' as const) : clientId ? ('sistema' as const) : null,
+    clientId: clientId ?? null,
+    redirectUri: resolverRedirectUri(origem),
+    conectado: !!token,
+    contaId: token?.userId ?? null,
+  };
+}
+
+export async function salvarCredenciaisMercadoLivre(dados: { clientId: string; clientSecret: string }) {
+  try {
+    await requireAdmin();
+    const clientId = dados.clientId.trim();
+    const clientSecret = dados.clientSecret.trim();
+    if (!/^\d{6,}$/.test(clientId)) return { success: false, error: 'O Client ID do Mercado Livre é só números (ex.: 1234567890123456).' };
+    if (clientSecret.length < 16) return { success: false, error: 'O Client Secret parece incompleto. Copie de novo a "Secret Key" do aplicativo.' };
+    const valor = JSON.stringify({ clientId, clientSecret });
+    await prisma.configuracao.upsert({ where: { chave: CHAVE_CONFIG }, create: { chave: CHAVE_CONFIG, valor }, update: { valor } });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
+  }
+}
+
+export async function getAuthorizationUrl(origem: string) {
+  const { clientId } = await getCredentials();
+  const redirectUri = resolverRedirectUri(origem);
   const url = new URL('https://auth.mercadolivre.com.br/authorization');
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('client_id', clientId);
@@ -33,8 +83,10 @@ export async function getAuthorizationUrl() {
   return url.toString();
 }
 
-export async function exchangeCodeForToken(code: string) {
-  const { clientId, clientSecret, redirectUri } = getCredentials();
+export async function exchangeCodeForToken(code: string, origem: string) {
+  await requireAdmin();
+  const { clientId, clientSecret } = await getCredentials();
+  const redirectUri = resolverRedirectUri(origem);
 
   const res = await fetch(`${ML_API}/oauth/token`, {
     method: 'POST',
@@ -94,7 +146,7 @@ async function getValidAccessToken(): Promise<string> {
     return token.accessToken;
   }
 
-  const { clientId, clientSecret } = getCredentials();
+  const { clientId, clientSecret } = await getCredentials();
   const res = await fetch(`${ML_API}/oauth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
