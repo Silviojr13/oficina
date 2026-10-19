@@ -23,6 +23,7 @@ import {
   UserCog,
   MessageSquare,
   Contact,
+  ScanBarcode,
 } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
@@ -42,6 +43,7 @@ const navGroups = [
   {
     label: 'Estoque & Compras',
     items: [
+      { href: '/admin/scanner', label: 'Scanner', icon: ScanBarcode },
       { href: '/admin/produtos', label: 'Produtos', icon: Package },
       { href: '/admin/estoque', label: 'Estoque', icon: Boxes, alert: 3 },
       { href: '/admin/compras', label: 'Compras', icon: TrendingUp },

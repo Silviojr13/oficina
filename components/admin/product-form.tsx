@@ -15,6 +15,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useEffect, useState } from 'react'; // Added useState
 import { optionalNumber, nullsToUndefined, avisarErroValidacao } from '@/lib/zod-helpers';
+import Link from 'next/link';
+import { AlertTriangle } from 'lucide-react';
+import { BotaoLeitor } from '@/components/admin/leitor-codigo-barras';
+import { buscarProdutoPorCodigo } from '@/lib/actions/produtos';
 
 // Definição do esquema de validação com Zod
 const produtoSchema = z.object({
@@ -154,6 +158,24 @@ export default function ProductForm({ initialData, onSubmit, isEditing, forneced
     }
   }, [nome, setValue, initialData?.slug]);
 
+  // Codigo de barras: lido pela camera ou digitado. Se ja pertence a outro
+  // produto, avisa na hora - evita catalogar a mesma peca duas vezes.
+  const [produtoComMesmoCodigo, setProdutoComMesmoCodigo] = useState<{ id: string; nome: string } | null>(null);
+
+  const verificarCodigoBarras = async (codigo: string) => {
+    if (!codigo.trim()) {
+      setProdutoComMesmoCodigo(null);
+      return;
+    }
+    const existente = await buscarProdutoPorCodigo(codigo);
+    setProdutoComMesmoCodigo(existente && existente.id !== initialData?.id ? { id: existente.id, nome: existente.nome } : null);
+  };
+
+  const lerCodigoBarras = async (codigo: string) => {
+    setValue('codigoBarras', codigo, { shouldDirty: true });
+    await verificarCodigoBarras(codigo);
+  };
+
   // Estado para a aba de compatibilidade
   const [veiculos, setVeiculos] = useState<VeiculoCompativel[]>(initialData?.veiculosCompativeis ?? []);
 
@@ -245,6 +267,31 @@ export default function ProductForm({ initialData, onSubmit, isEditing, forneced
                   <Label htmlFor="codigoOEM">Código OEM</Label>
                   <Input id="codigoOEM" {...register('codigoOEM')} />
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="codigoBarras">Código de barras (EAN)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="codigoBarras"
+                    className="font-mono"
+                    inputMode="numeric"
+                    placeholder="Leia com a câmera ou digite"
+                    {...register('codigoBarras', { onBlur: (e) => verificarCodigoBarras(e.target.value) })}
+                  />
+                  <BotaoLeitor onLeitura={lerCodigoBarras} titulo="Ler código do produto" rotulo="Ler código" />
+                </div>
+                {produtoComMesmoCodigo && (
+                  <p className="mt-1.5 flex items-start gap-1.5 text-sm text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                    <span>
+                      Este código já está no produto{' '}
+                      <Link href={`/admin/produtos/${produtoComMesmoCodigo.id}/editar`} className="font-medium underline">
+                        {produtoComMesmoCodigo.nome}
+                      </Link>
+                      .
+                    </span>
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="marca">Marca *</Label>

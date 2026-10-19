@@ -16,6 +16,7 @@ import { Search, Plus, Edit, Trash2, Clock, Car, User as UserIcon } from 'lucide
 import { cn } from '@/lib/utils';
 import { getOrdensServico, deleteOrdemServico, atualizarStatusOrdemServico } from '@/lib/actions/ordens-servico';
 import { useSession } from 'next-auth/react';
+import { iniciais } from '@/components/admin/seletor-responsaveis';
 
 const colunas = [
   { status: 'aberto', label: 'Aberta', dotClass: 'bg-status-aberto' },
@@ -35,6 +36,42 @@ const statusLabels: Record<string, string> = {
   entregue: 'Entregue',
   cancelado: 'Cancelada',
 };
+
+type ResponsavelCard = { id: string; nome: string; funcionarioId: string | null };
+
+// Quem esta tocando a OS, direto no card do patio - mostra ate 3 avatares e
+// resume o resto, pra nao estourar a largura da coluna no celular.
+function Responsaveis({ responsaveis }: { responsaveis?: ResponsavelCard[] }) {
+  if (!responsaveis?.length) {
+    return <p className="text-xs text-muted-foreground">Sem responsável definido</p>;
+  }
+
+  const visiveis = responsaveis.slice(0, 3);
+  const restantes = responsaveis.length - visiveis.length;
+
+  return (
+    <div className="flex items-center gap-2" title={responsaveis.map((r) => r.nome).join(', ')}>
+      <div className="flex -space-x-1.5">
+        {visiveis.map((responsavel) => (
+          <span
+            key={responsavel.id}
+            className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-primary text-[10px] font-semibold text-primary-foreground"
+          >
+            {iniciais(responsavel.nome)}
+          </span>
+        ))}
+        {restantes > 0 && (
+          <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-secondary text-[10px] font-semibold text-secondary-foreground">
+            +{restantes}
+          </span>
+        )}
+      </div>
+      <span className="truncate text-xs text-muted-foreground">
+        {responsaveis.length === 1 ? responsaveis[0].nome : `${responsaveis.length} pessoas`}
+      </span>
+    </div>
+  );
+}
 
 function diasNoPatio(dataEntrada: string) {
   const dias = Math.floor((Date.now() - new Date(dataEntrada).getTime()) / (1000 * 60 * 60 * 24));
@@ -139,6 +176,7 @@ export default function OrdensServicoPage() {
                               <span>No pátio há {diasNoPatio(ordem.dataEntrada)}</span>
                             </div>
                           </div>
+                          <Responsaveis responsaveis={ordem.responsaveis} />
                           <div className="flex items-center justify-between pt-1 border-t border-border">
                             <span className="font-semibold">R$ {ordem.valorTotal.toFixed(2).replace('.', ',')}</span>
                             <div className="flex gap-1">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { AdminHeader } from '@/components/admin-header';
 import { Produto } from '@/lib/types';
 import { createProduto } from '@/lib/actions/produtos';
@@ -9,8 +9,11 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import ProductForm from '@/components/admin/product-form';
 
-export default function NewProductPage() {
+export default function NewProductPage({ searchParams }: { searchParams: Promise<{ codigoBarras?: string }> }) {
   const router = useRouter();
+  // Vindo do scanner ("Cadastrar produto com este código"): o código lido ja
+  // chega preenchido no formulario.
+  const { codigoBarras } = use(searchParams);
   const [fornecedores, setFornecedores] = useState<any[]>([]);
 
   useEffect(() => {
@@ -35,6 +38,7 @@ export default function NewProductPage() {
       <AdminHeader title="Novo Produto" subtitle="Adicione um novo produto ao catálogo" />
       <main className="p-4 sm:p-6 space-y-6">
         <ProductForm
+          initialData={codigoBarras ? { codigoBarras } : undefined}
           onSubmit={handleSubmit}
           isEditing={false}
           fornecedores={fornecedores}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminHeader } from '@/components/admin-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,8 @@ import { createSaidaEstoque } from '@/lib/actions/vendas';
 import { getProdutos } from '@/lib/actions/produtos';
 import { toast } from 'sonner';
 import type { Produto } from '@/lib/types';
+import { BotaoLeitor, type ResultadoLeitura } from '@/components/admin/leitor-codigo-barras';
+import { encontrarProdutoPorCodigo, mensagemCodigoNaoCadastrado } from '@/lib/produto-codigo';
 
 type ItemVenda = {
   id: string;
@@ -25,8 +27,10 @@ type ItemVenda = {
   valorTotal: number;
 };
 
-export default function NewSalePage() {
+export default function NewSalePage({ searchParams }: { searchParams: Promise<{ produto?: string }> }) {
   const router = useRouter();
+  // Vindo do scanner ("Vender esta peca"): a venda ja abre com o produto.
+  const { produto: produtoInicial } = use(searchParams);
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [tipoSaida, setTipoSaida] = useState<'venda_balcao' | 'venda_online'>('venda_balcao');
   const [cliente, setCliente] = useState('');
@@ -39,29 +43,35 @@ export default function NewSalePage() {
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
-    getProdutos(1, 1000).then((res) => setProdutos(res.data as unknown as Produto[]));
+    getProdutos(1, 1000).then((res) => {
+      const lista = res.data as unknown as Produto[];
+      setProdutos(lista);
+      const inicial = produtoInicial ? lista.find((p) => p.id === produtoInicial) : undefined;
+      if (inicial) {
+        // Venda ainda vazia e sem desconto: o total e o proprio item.
+        const novosItens = somarItem([], inicial, 1);
+        setItens(novosItens);
+        setSubtotal(novosItens[0].valorTotal);
+        setValorFinal(novosItens[0].valorTotal);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addItem = (produtoId: string, quantidade: number) => {
     const produto = produtos.find(p => p.id === produtoId);
     if (!produto) return;
-
-    const valorUnitario = produto.precoVendaBalcao || produto.precoSite;
-    const newItem: ItemVenda = {
-      id: `item_${Date.now()}`,
-      produtoId,
-      quantidade,
-      unidade: 'UN',
-      valorUnitario,
-      desconto: 0,
-      ipi: 0,
-      icms: 0,
-      valorTotal: valorUnitario * quantidade,
-    };
-
-    const novosItens = [...itens, newItem];
+    const novosItens = somarItem(itens, produto, quantidade);
     setItens(novosItens);
     calculateTotals(novosItens);
+  };
+
+  const lerProduto = (codigo: string): ResultadoLeitura => {
+    const produto = encontrarProdutoPorCodigo(produtos, codigo);
+    if (!produto) return { tipo: 'erro', mensagem: mensagemCodigoNaoCadastrado(codigo) };
+    const quantidadeAtual = itens.find(item => item.produtoId === produto.id)?.quantidade ?? 0;
+    addItem(produto.id, 1);
+    return { tipo: 'sucesso', mensagem: `${produto.nome} — ${quantidadeAtual + 1} un.` };
   };
 
   const removeItem = (itemId: string) => {
@@ -160,7 +170,7 @@ export default function NewSalePage() {
           <CardTitle>Adicionar Itens</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4 items-end">
             <div>
               <Label>Selecionar Produto</Label>
               <Select onValueChange={(pid) => addItem(pid, 1)}>
@@ -173,6 +183,9 @@ export default function NewSalePage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <BotaoLeitor onLeitura={lerProduto} continuo titulo="Bipar produtos da venda" rotulo="Escanear produtos" className="w-full md:w-auto" />
             </div>
           </div>
 
@@ -254,4 +267,28 @@ export default function NewSalePage() {
       </main>
     </>
   );
+}
+
+// Produto que ja esta na venda soma na mesma linha (ler a mesma peca duas
+// vezes no leitor = 2 unidades), em vez de duplicar a linha.
+function somarItem(itens: ItemVenda[], produto: Produto, quantidade: number): ItemVenda[] {
+  if (itens.some(item => item.produtoId === produto.id)) {
+    return itens.map(item => {
+      if (item.produtoId !== produto.id) return item;
+      const novaQuantidade = item.quantidade + quantidade;
+      return { ...item, quantidade: novaQuantidade, valorTotal: item.valorUnitario * novaQuantidade - item.desconto };
+    });
+  }
+  const valorUnitario = produto.precoVendaBalcao || produto.precoSite;
+  return [...itens, {
+    id: `item_${Date.now()}`,
+    produtoId: produto.id,
+    quantidade,
+    unidade: 'UN',
+    valorUnitario,
+    desconto: 0,
+    ipi: 0,
+    icms: 0,
+    valorTotal: valorUnitario * quantidade,
+  }];
 }

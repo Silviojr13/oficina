@@ -14,6 +14,27 @@ async function proximoNumero() {
   return `OS-${(ultimoNumero + 1).toString().padStart(4, '0')}`;
 }
 
+// O formulario manda [{ funcionarioId?, nome }]. Nome e obrigatorio e vira
+// snapshot; funcionarioId so existe quando a pessoa veio do cadastro.
+// Duplicatas (mesma pessoa marcada duas vezes) sao descartadas aqui.
+function normalizarResponsaveis(responsaveis: any): { funcionarioId: string | null; nome: string }[] {
+  if (!Array.isArray(responsaveis)) return [];
+  const vistos = new Set<string>();
+  const resultado: { funcionarioId: string | null; nome: string }[] = [];
+
+  for (const item of responsaveis) {
+    const nome = typeof item?.nome === 'string' ? item.nome.trim() : '';
+    if (!nome) continue;
+    const funcionarioId = item?.funcionarioId ?? null;
+    const chave = funcionarioId ?? `nome:${nome.toLowerCase()}`;
+    if (vistos.has(chave)) continue;
+    vistos.add(chave);
+    resultado.push({ funcionarioId, nome });
+  }
+
+  return resultado;
+}
+
 function parseServicos<T extends { servicosRealizados: string | null }>(ordem: T) {
   return {
     ...ordem,
@@ -27,6 +48,7 @@ export async function getOrdemServico(id: string) {
       where: { id },
       include: {
         itens: { include: { produto: true } },
+        responsaveis: true,
         cliente: { include: { veiculos: true } },
       },
     });
@@ -56,7 +78,7 @@ export async function getOrdensServico(page: number = 1, limit: number = 50, sea
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
-      include: { itens: { include: { produto: true } } },
+      include: { itens: { include: { produto: true } }, responsaveis: true },
     });
 
     const total = await prisma.ordemServico.count({ where: whereClause });
@@ -81,6 +103,7 @@ export async function createOrdemServico(data: any) {
       numero,
       servicosRealizados: data.servicosRealizados ? JSON.stringify(data.servicosRealizados) : null,
       itens: data.itens?.length ? { create: data.itens } : undefined,
+      responsaveis: { create: normalizarResponsaveis(data.responsaveis) },
     };
 
     // As pecas usadas na OS saem do estoque - sem isso "Estoque Atual" fica
@@ -88,7 +111,7 @@ export async function createOrdemServico(data: any) {
     const [ordem] = await prisma.$transaction([
       prisma.ordemServico.create({
         data: ordemData,
-        include: { itens: { include: { produto: true } } },
+        include: { itens: { include: { produto: true } }, responsaveis: true },
       }),
       ...(data.itens ?? []).map((item: any) =>
         prisma.produto.update({
@@ -121,6 +144,11 @@ export async function updateOrdemServico(id: string, data: any) {
       ...(data.itens
         ? { itens: { deleteMany: {}, create: data.itens } }
         : {}),
+      // A lista de responsaveis e sempre reescrita por inteiro quando o
+      // formulario a envia - inclusive vazia, que significa "tirei todo mundo".
+      ...(data.responsaveis
+        ? { responsaveis: { deleteMany: {}, create: normalizarResponsaveis(data.responsaveis) } }
+        : {}),
     };
 
     // Se a lista de pecas foi enviada, repoe o estoque das pecas antigas e
@@ -134,7 +162,7 @@ export async function updateOrdemServico(id: string, data: any) {
       prisma.ordemServico.update({
         where: { id },
         data: ordemData,
-        include: { itens: { include: { produto: true } } },
+        include: { itens: { include: { produto: true } }, responsaveis: true },
       }),
       ...itensAnteriores.map((item) =>
         prisma.produto.update({

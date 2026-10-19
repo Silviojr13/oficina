@@ -15,6 +15,10 @@ import { Plus, Trash2, Search, X, Car, Clock, AlertTriangle } from 'lucide-react
 import type { Produto } from '@/lib/types';
 import { optionalNumber, avisarErroValidacao } from '@/lib/zod-helpers';
 import { searchClientes, getHistoricoPorPlaca } from '@/lib/actions/clientes';
+import { listarEquipeAtiva } from '@/lib/actions/funcionarios';
+import SeletorResponsaveis, { type MembroEquipe, type ResponsavelSelecionado } from './seletor-responsaveis';
+import { BotaoLeitor, type ResultadoLeitura } from './leitor-codigo-barras';
+import { encontrarProdutoPorCodigo, mensagemCodigoNaoCadastrado } from '@/lib/produto-codigo';
 
 const statusLabels: Record<string, string> = {
   aberto: 'Aberta',
@@ -38,7 +42,6 @@ const ordemServicoSchema = z.object({
   clienteNome: z.string().min(1, 'Nome do cliente é obrigatório'),
   clienteTelefone: z.string().optional(),
   clienteCpfCnpj: z.string().optional(),
-  mecanicoResponsavel: z.string().optional(),
   dataEntrada: z.string().min(1, 'Data de entrada é obrigatória'),
   dataPrevisaoEntrega: z.string().optional(),
   problemaRelatado: z.string().optional(),
@@ -93,7 +96,6 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
       clienteNome: initialData?.clienteNome ?? '',
       clienteTelefone: initialData?.clienteTelefone ?? '',
       clienteCpfCnpj: initialData?.clienteCpfCnpj ?? '',
-      mecanicoResponsavel: initialData?.mecanicoResponsavel ?? '',
       problemaRelatado: initialData?.problemaRelatado ?? '',
       diagnostico: initialData?.diagnostico ?? '',
       codigoFalha: initialData?.codigoFalha ?? '',
@@ -134,6 +136,27 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
   );
   const [veiculoIdSelecionado, setVeiculoIdSelecionado] = useState<string | undefined>(initialData?.veiculoId ?? undefined);
   const [historico, setHistorico] = useState<HistoricoOS[]>([]);
+
+  // Responsaveis pela OS. Em OS antigas, antes da lista existir, o unico dado
+  // disponivel e o texto de mecanicoResponsavel - ele entra como avulso pra
+  // nao sumir da tela ao editar.
+  const [equipe, setEquipe] = useState<MembroEquipe[]>([]);
+  const [responsaveis, setResponsaveis] = useState<ResponsavelSelecionado[]>(() => {
+    if (initialData?.responsaveis?.length) {
+      return initialData.responsaveis.map((r: any) => ({
+        funcionarioId: r.funcionarioId ?? null,
+        nome: r.nome,
+      }));
+    }
+    if (initialData?.mecanicoResponsavel) {
+      return [{ funcionarioId: null, nome: initialData.mecanicoResponsavel }];
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    listarEquipeAtiva().then(setEquipe);
+  }, []);
 
   useEffect(() => {
     const termo = buscaCliente.trim();
@@ -218,6 +241,29 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
     setQuantidadeSelecionada('1');
   };
 
+  // Leitura pela camera (modo continuo): cada peca bipada entra na OS pelo
+  // preco de balcao; a mesma peca de novo soma +1.
+  const lerPeca = (codigo: string): ResultadoLeitura => {
+    const produto = encontrarProdutoPorCodigo(produtos, codigo);
+    if (!produto) return { tipo: 'erro', mensagem: mensagemCodigoNaoCadastrado(codigo) };
+
+    const valorUnitario = produto.precoVendaBalcao || produto.precoSite;
+    const quantidadeAtual = itens.find((i) => i.produtoId === produto.id)?.quantidade ?? 0;
+    setItens((atual) => {
+      const existente = atual.find((i) => i.produtoId === produto.id);
+      if (!existente) return [...atual, { produtoId: produto.id, quantidade: 1, valorUnitario, valorTotal: valorUnitario }];
+      return atual.map((i) =>
+        i.produtoId === produto.id ? { ...i, quantidade: i.quantidade + 1, valorTotal: i.valorUnitario * (i.quantidade + 1) } : i
+      );
+    });
+
+    const restante = produto.estoqueAtual - (quantidadeAtual + 1);
+    return {
+      tipo: 'sucesso',
+      mensagem: `${produto.nome} — ${quantidadeAtual + 1} un.${restante < 0 ? ' (acima do estoque atual)' : ''}`,
+    };
+  };
+
   const removerPeca = (index: number) => setItens(itens.filter((_, i) => i !== index));
 
   const valorMaoDeObra = servicos.reduce((sum, s) => sum + s.valor, 0);
@@ -232,6 +278,7 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
       clienteId: clienteSelecionado?.id ?? null,
       veiculoId: veiculoIdSelecionado ?? null,
       servicosRealizados: servicos,
+      responsaveis,
       itens: itens.map((i) => ({ produtoId: i.produtoId, quantidade: i.quantidade, valorUnitario: i.valorUnitario, valorTotal: i.valorTotal })),
       valorMaoDeObra,
       valorPecas,
@@ -400,7 +447,7 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
             <Label htmlFor="diagnostico">Diagnóstico da oficina</Label>
             <Textarea id="diagnostico" {...register('diagnostico')} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="codigoFalha">Código de falha (OBD2)</Label>
               <Input id="codigoFalha" className="font-mono" placeholder="Ex: P0301" {...register('codigoFalha')} />
@@ -409,11 +456,9 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
               <Label htmlFor="sistemaAfetado">Sistema afetado</Label>
               <Input id="sistemaAfetado" placeholder="Ex: Injeção, ABS, elétrica..." {...register('sistemaAfetado')} />
             </div>
-            <div>
-              <Label htmlFor="mecanicoResponsavel">Mecânico responsável</Label>
-              <Input id="mecanicoResponsavel" {...register('mecanicoResponsavel')} />
-            </div>
           </div>
+
+          <SeletorResponsaveis equipe={equipe} value={responsaveis} onChange={setResponsaveis} />
         </CardContent>
       </Card>
 
@@ -448,7 +493,7 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
       <Card>
         <CardHeader><CardTitle>Peças utilizadas</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_auto] gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_auto_auto] gap-2">
             <Select value={produtoSelecionado} onValueChange={setProdutoSelecionado}>
               <SelectTrigger><SelectValue placeholder="Selecione uma peça do estoque" /></SelectTrigger>
               <SelectContent>
@@ -459,6 +504,7 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
             </Select>
             <Input type="number" min="1" value={quantidadeSelecionada} onChange={(e) => setQuantidadeSelecionada(e.target.value)} />
             <Button type="button" variant="outline" onClick={adicionarPeca}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
+            <BotaoLeitor onLeitura={lerPeca} continuo titulo="Bipar peças da OS" />
           </div>
           {itens.length > 0 && (
             <div className="overflow-x-auto">

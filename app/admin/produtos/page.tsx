@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { getProdutos, deleteProduto } from '@/lib/actions/produtos';
+import { getProdutos, deleteProduto, buscarProdutoPorCodigo } from '@/lib/actions/produtos';
+import { BotaoLeitor } from '@/components/admin/leitor-codigo-barras';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Search, Plus, Edit, Trash2 } from 'lucide-react';
@@ -92,6 +93,20 @@ export default function ProductListPage() {
             ))}
           </SelectContent>
         </Select>
+        <BotaoLeitor
+          titulo="Encontrar produto pelo código"
+          rotulo="Escanear"
+          onLeitura={async (codigo) => {
+            const produto = await buscarProdutoPorCodigo(codigo);
+            if (produto) {
+              router.push(`/admin/produtos/${produto.id}/editar`);
+              return;
+            }
+            toast.error(`Código ${codigo} não está cadastrado.`, {
+              action: { label: 'Cadastrar', onClick: () => router.push(`/admin/produtos/novo?codigoBarras=${encodeURIComponent(codigo)}`) },
+            });
+          }}
+        />
         <Button onClick={() => router.push('/admin/produtos/novo')}>
           <Plus className="mr-2 h-4 w-4" /> Novo Produto
         </Button>
