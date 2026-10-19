@@ -112,7 +112,21 @@ export function ConfigurarMercadoLivre({ status }: { status: Status }) {
                     </Button>
                   </div>
                 </li>
-                <li>Em <strong>Escopos</strong>, marque <strong>leitura e escrita</strong> e o acesso <strong>offline</strong> (para o sistema renovar a conexão sozinho).</li>
+                <li>Em <strong>Permissões</strong>, deixe <strong>Leitura e escrita</strong> em Usuários, Comunicações pré e pós-vendas, anúncios e vendas. Em <strong>Fluxos OAuth</strong>, marque <strong>Authorization Code</strong> e <strong>Refresh Token</strong> — sem o Refresh Token a conexão cai a cada 6 horas.</li>
+                <li>
+                  Em <strong>Configuração de notificações</strong>, no campo <strong>URL de retornos de chamada de notificação</strong>, cole:
+                  <div className="mt-1.5 flex gap-2">
+                    <code className="min-w-0 flex-1 break-all rounded-md border border-border bg-secondary px-3 py-2 font-mono text-xs">
+                      {status.urlNotificacoes}
+                    </code>
+                    <Button type="button" variant="outline" size="icon" onClick={() => copiar(status.urlNotificacoes)} aria-label="Copiar endereço de notificações">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <span className="mt-1 block text-muted-foreground">
+                    E marque os tópicos <strong>Orders</strong> (vendas) e <strong>Questions</strong> (perguntas): venda paga entra em Vendas e baixa o estoque; pergunta aparece em Mensagens.
+                  </span>
+                </li>
                 <li>Salve. O Mercado Livre mostra o <strong>Client ID</strong> (ou App ID) e o <strong>Client Secret</strong> (ou Secret Key). Copie e cole abaixo.</li>
               </ol>
 

@@ -20,7 +20,10 @@ export async function GET(request: NextRequest) {
     await exchangeCodeForToken(code, request.nextUrl.origin);
     baseUrl.searchParams.set('conectado', '1');
   } catch (error) {
-    baseUrl.searchParams.set('erro', error instanceof Error ? error.message : 'Erro desconhecido');
+    // O erro tecnico pode conter o token de acesso (ex.: erro do Prisma com
+    // os dados que tentou gravar) - nunca vai para a URL/tela; so para o log.
+    console.error('Erro ao conectar o Mercado Livre:', error);
+    baseUrl.searchParams.set('erro', 'Não foi possível concluir a conexão com o Mercado Livre. Tente conectar de novo; se repetir, confira se o aplicativo de lá tem o acesso offline e o endereço de retorno certos.');
   }
 
   return NextResponse.redirect(baseUrl);

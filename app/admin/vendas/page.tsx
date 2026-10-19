@@ -107,7 +107,7 @@ export default function SalesListPage() {
                     <td className="py-2">{(venda.formasPagamento ?? []).join(', ')}</td>
                     <td className="py-2">
                       <Badge variant={venda.tipoSaida === 'venda_balcao' ? 'default' : 'secondary'}>
-                        {venda.tipoSaida === 'venda_balcao' ? 'Venda Balcão' : 'Venda Online'}
+                        {venda.tipoSaida === 'venda_balcao' ? 'Venda Balcão' : venda.tipoSaida === 'venda_mercadolivre' ? 'Mercado Livre' : 'Venda Online'}
                       </Badge>
                     </td>
                   </tr>
