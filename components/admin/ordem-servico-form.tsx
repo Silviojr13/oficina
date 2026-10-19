@@ -18,6 +18,7 @@ import { searchClientes, getHistoricoPorPlaca } from '@/lib/actions/clientes';
 import { listarEquipeAtiva } from '@/lib/actions/funcionarios';
 import SeletorResponsaveis, { type MembroEquipe, type ResponsavelSelecionado } from './seletor-responsaveis';
 import { BotaoLeitor, type ResultadoLeitura } from './leitor-codigo-barras';
+import { SeletorProduto } from './seletor-produto';
 import { encontrarProdutoPorCodigo, mensagemCodigoNaoCadastrado } from '@/lib/produto-codigo';
 
 const statusLabels: Record<string, string> = {
@@ -123,8 +124,6 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
         }))
       : []
   );
-  const [produtoSelecionado, setProdutoSelecionado] = useState('');
-  const [quantidadeSelecionada, setQuantidadeSelecionada] = useState('1');
 
   // Busca/vinculo de cliente e veiculo cadastrados - opcional, nao trava o
   // atendimento: se nao achar nada, o mecanico continua digitando avulso
@@ -228,34 +227,30 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
 
   const removerServico = (id: string) => setServicos(servicos.filter((s) => s.id !== id));
 
-  const adicionarPeca = () => {
-    const produto = produtos.find((p) => p.id === produtoSelecionado);
-    const quantidade = parseInt(quantidadeSelecionada, 10);
-    if (!produto || !quantidade || quantidade <= 0) return;
+  // Peca escolhida na busca ou bipada entra pelo preco de balcao; se ja esta
+  // na OS, soma na mesma linha em vez de duplicar.
+  const somarPeca = (produto: Produto, quantidade: number) => {
     const valorUnitario = produto.precoVendaBalcao || produto.precoSite;
-    setItens([
-      ...itens,
-      { produtoId: produto.id, quantidade, valorUnitario, valorTotal: valorUnitario * quantidade },
-    ]);
-    setProdutoSelecionado('');
-    setQuantidadeSelecionada('1');
+    setItens((atual) => {
+      const existente = atual.find((i) => i.produtoId === produto.id);
+      if (!existente) return [...atual, { produtoId: produto.id, quantidade, valorUnitario, valorTotal: valorUnitario * quantidade }];
+      return atual.map((i) =>
+        i.produtoId === produto.id
+          ? { ...i, quantidade: i.quantidade + quantidade, valorTotal: i.valorUnitario * (i.quantidade + quantidade) }
+          : i
+      );
+    });
   };
 
-  // Leitura pela camera (modo continuo): cada peca bipada entra na OS pelo
-  // preco de balcao; a mesma peca de novo soma +1.
+  const quantidadeNaOS = (produtoId: string) => itens.find((i) => i.produtoId === produtoId)?.quantidade ?? 0;
+
+  // Leitura pela camera (modo continuo): cada peca bipada soma +1.
   const lerPeca = (codigo: string): ResultadoLeitura => {
     const produto = encontrarProdutoPorCodigo(produtos, codigo);
     if (!produto) return { tipo: 'erro', mensagem: mensagemCodigoNaoCadastrado(codigo) };
 
-    const valorUnitario = produto.precoVendaBalcao || produto.precoSite;
-    const quantidadeAtual = itens.find((i) => i.produtoId === produto.id)?.quantidade ?? 0;
-    setItens((atual) => {
-      const existente = atual.find((i) => i.produtoId === produto.id);
-      if (!existente) return [...atual, { produtoId: produto.id, quantidade: 1, valorUnitario, valorTotal: valorUnitario }];
-      return atual.map((i) =>
-        i.produtoId === produto.id ? { ...i, quantidade: i.quantidade + 1, valorTotal: i.valorUnitario * (i.quantidade + 1) } : i
-      );
-    });
+    const quantidadeAtual = quantidadeNaOS(produto.id);
+    somarPeca(produto, 1);
 
     const restante = produto.estoqueAtual - (quantidadeAtual + 1);
     return {
@@ -493,18 +488,9 @@ export default function OrdemServicoForm({ produtos, initialData, onSubmit, isEd
       <Card>
         <CardHeader><CardTitle>Peças utilizadas</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_auto_auto] gap-2">
-            <Select value={produtoSelecionado} onValueChange={setProdutoSelecionado}>
-              <SelectTrigger><SelectValue placeholder="Selecione uma peça do estoque" /></SelectTrigger>
-              <SelectContent>
-                {produtos.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.nome} (R$ {(p.precoVendaBalcao || p.precoSite).toFixed(2)})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input type="number" min="1" value={quantidadeSelecionada} onChange={(e) => setQuantidadeSelecionada(e.target.value)} />
-            <Button type="button" variant="outline" onClick={adicionarPeca}><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
-            <BotaoLeitor onLeitura={lerPeca} continuo titulo="Bipar peças da OS" />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <SeletorProduto produtos={produtos} onAdicionar={somarPeca} quantidadeNaLista={quantidadeNaOS} titulo="Adicionar peça à OS" />
+            <BotaoLeitor onLeitura={lerPeca} continuo titulo="Bipar peças da OS" rotulo="Bipar várias peças" />
           </div>
           {itens.length > 0 && (
             <div className="overflow-x-auto">
