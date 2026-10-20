@@ -46,7 +46,6 @@ export async function getFuncionarios(page: number = 1, limit: number = 10, sear
     if (search) {
       whereClause.nome = {
         contains: search,
-        mode: 'insensitive',
       };
     }
 

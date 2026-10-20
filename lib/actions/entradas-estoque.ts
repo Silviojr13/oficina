@@ -3,10 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { parseDateFields } from '../prisma-helpers';
-import { requireAdmin } from '../auth-guard';
+import { requireAdmin, requireStaff } from '../auth-guard';
 
 export async function getEntradaEstoque(id: string) {
   try {
+    await requireStaff();
     const entrada = await prisma.entradaEstoque.findUnique({
       where: { id },
       include: {
@@ -28,14 +29,15 @@ export async function getEntradaEstoque(id: string) {
 
 export async function getEntradasEstoque(page: number = 1, limit: number = 10, search?: string) {
   try {
+    await requireStaff();
     const skip = (page - 1) * limit;
 
     let whereClause: any = {};
     if (search) {
       // Search by supplier name or NF number
       whereClause.OR = [
-        { fornecedor: { nomeFantasia: { contains: search, mode: 'insensitive' } } },
-        { numeroNF: { contains: search, mode: 'insensitive' } },
+        { fornecedor: { nomeFantasia: { contains: search } } },
+        { numeroNF: { contains: search } },
       ];
     }
 
@@ -75,6 +77,7 @@ export async function getEntradasEstoque(page: number = 1, limit: number = 10, s
 
 export async function createEntradaEstoque(data: any) {
   try {
+    await requireStaff();
     const entradaData = {
       ...parseDateFields(data, ['dataEmissao', 'dataEntrada', 'dataVencimento']),
       itens: {
@@ -119,6 +122,7 @@ export async function createEntradaEstoque(data: any) {
 
 export async function updateEntradaEstoque(id: string, data: any) {
   try {
+    await requireStaff();
     const entradaAnterior = await prisma.entradaEstoque.findUnique({
       where: { id },
       include: { itens: true },

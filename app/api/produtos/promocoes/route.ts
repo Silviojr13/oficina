@@ -9,6 +9,11 @@ export async function GET(request: Request) {
       precoPromocional: { not: null },
     },
     orderBy: { createdAt: 'desc' },
+    // So o que a vitrine precisa - nada de custo, margem ou dados internos.
+    select: {
+      id: true, nome: true, slug: true, marca: true, categoria: true, imagemPrincipal: true,
+      precoSite: true, precoPromocional: true, dataInicioPromocao: true, dataFimPromocao: true, estoqueAtual: true,
+    },
   });
 
   return NextResponse.json(produtosEmPromocao);

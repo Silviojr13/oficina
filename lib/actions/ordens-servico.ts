@@ -44,6 +44,7 @@ function parseServicos<T extends { servicosRealizados: string | null }>(ordem: T
 
 export async function getOrdemServico(id: string) {
   try {
+    await requireStaff();
     const ordem = await prisma.ordemServico.findUnique({
       where: { id },
       include: {
@@ -61,14 +62,15 @@ export async function getOrdemServico(id: string) {
 
 export async function getOrdensServico(page: number = 1, limit: number = 50, search?: string) {
   try {
+    await requireStaff();
     const skip = (page - 1) * limit;
 
     const whereClause: any = search
       ? {
           OR: [
-            { placa: { contains: search, mode: 'insensitive' } },
-            { clienteNome: { contains: search, mode: 'insensitive' } },
-            { numero: { contains: search, mode: 'insensitive' } },
+            { placa: { contains: search } },
+            { clienteNome: { contains: search } },
+            { numero: { contains: search } },
           ],
         }
       : {};
@@ -192,6 +194,7 @@ export async function updateOrdemServico(id: string, data: any) {
 
 export async function atualizarStatusOrdemServico(id: string, status: string) {
   try {
+    await requireStaff();
     const dataExtra: Record<string, unknown> = { status };
     if (status === 'entregue') dataExtra.dataSaida = new Date();
 

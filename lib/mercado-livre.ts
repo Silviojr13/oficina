@@ -38,6 +38,7 @@ export async function salvarCredenciaisMercadoLivre(dados: { clientId: string; c
 }
 
 export async function getAuthorizationUrl(origem: string) {
+  await requireAdmin();
   const { clientId } = await getCredentials();
   const redirectUri = resolverRedirectUri(origem);
   const url = new URL('https://auth.mercadolivre.com.br/authorization');
@@ -74,6 +75,7 @@ export async function exchangeCodeForToken(code: string, origem: string) {
 }
 
 export async function isConectado() {
+  await requireAdmin();
   const token = await prisma.mercadoLivreToken.findFirst({ orderBy: { createdAt: 'desc' } });
   return !!token;
 }

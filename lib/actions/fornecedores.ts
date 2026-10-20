@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
-import { requireAdmin } from '../auth-guard';
+import { requireAdmin, requireStaff } from '../auth-guard';
 
 // O formulário (e o restante do admin) trabalha com endereco/dadosBancarios
 // aninhados, mas o schema Prisma guarda esses campos "achatados" (colunas
@@ -61,6 +61,7 @@ function aninharFornecedor<T extends Record<string, any>>(fornecedor: T | null) 
 
 export async function getFornecedor(id: string) {
   try {
+    await requireStaff();
     const fornecedor = await prisma.fornecedor.findUnique({
       where: { id },
     });
@@ -74,13 +75,13 @@ export async function getFornecedor(id: string) {
 
 export async function getFornecedores(page: number = 1, limit: number = 10, search?: string) {
   try {
+    await requireStaff();
     const skip = (page - 1) * limit;
 
     let whereClause: any = {};
     if (search) {
       whereClause.razaoSocial = {
         contains: search,
-        mode: 'insensitive',
       };
     }
 
@@ -112,6 +113,7 @@ export async function getFornecedores(page: number = 1, limit: number = 10, sear
 
 export async function createFornecedor(data: any) {
   try {
+    await requireStaff();
     const fornecedor = await prisma.fornecedor.create({
       data: achatarFornecedor(data),
     });
@@ -127,6 +129,7 @@ export async function createFornecedor(data: any) {
 
 export async function updateFornecedor(id: string, data: any) {
   try {
+    await requireStaff();
     const fornecedor = await prisma.fornecedor.update({
       where: { id },
       data: achatarFornecedor(data),

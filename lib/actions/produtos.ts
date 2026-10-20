@@ -48,6 +48,7 @@ export async function buscarProdutoPorCodigo(codigo: string) {
 
 export async function getProduto(id: string) {
   try {
+    await requireStaff();
     const produto = await prisma.produto.findUnique({
       where: { id },
       include: {
@@ -73,10 +74,23 @@ export async function getProduto(id: string) {
   }
 }
 
+// Campos internos que nunca saem para a loja publica (o catalogo chega ao
+// navegador e ao carrinho, que fica no localStorage): custo, margem, precos
+// de negociacao, impostos, local no almoxarifado, fornecedor e Mercado Livre.
+const CAMPOS_INTERNOS = {
+  custoAquisicao: true, freteEntrada: true, impostosEntrada: true, custoTotal: true, margemLucro: true,
+  precoVendaSugerido: true, precoB2B: true, precoMinimo: true, descontoMaximo: true,
+  aliquotaICMS: true, aliquotaIPI: true, cstCsosn: true, pisCofins: true, regimeTributacao: true, ncm: true, cest: true,
+  localizacaoEstoque: true, setorAlmoxarifado: true, fornecedorPadraoId: true, prazoReposicao: true,
+  estoqueMaximo: true, estoqueSeguranca: true,
+  mercadoLivreId: true, mercadoLivreStatus: true, mercadoLivreErro: true, mercadoLivreSyncEm: true,
+} as const;
+
 export async function getProdutoBySlug(slug: string) {
   try {
     const produto = await prisma.produto.findUnique({
       where: { slug },
+      omit: CAMPOS_INTERNOS,
       include: {
         veiculosCompativeis: true,
       },
@@ -104,6 +118,7 @@ export async function getProdutosPublicos() {
   try {
     const produtos = await prisma.produto.findMany({
       where: { exibirNoSite: true, ativo: true },
+      omit: CAMPOS_INTERNOS,
       orderBy: { createdAt: 'desc' },
       include: {
         veiculosCompativeis: true,
@@ -128,13 +143,13 @@ export async function getProdutosPublicos() {
 // incluirArquivados para poder reativar.
 export async function getProdutos(page: number = 1, limit: number = 10, search?: string, incluirArquivados = false) {
   try {
+    await requireStaff();
     const skip = (page - 1) * limit;
 
     let whereClause: any = incluirArquivados ? {} : { ativo: true };
     if (search) {
       whereClause.nome = {
         contains: search,
-        mode: 'insensitive',
       };
     }
 
@@ -214,6 +229,7 @@ async function gerarSlugUnico(base: string, ignorarId?: string) {
 
 export async function createProduto(data: any) {
   try {
+    await requireStaff();
     const sku = typeof data.sku === 'string' && data.sku.trim() ? data.sku.trim() : await gerarSku(data.categoria);
     const slug = await gerarSlugUnico(data.slug || data.nome);
     const produtoData = {
@@ -321,6 +337,7 @@ export async function publicarNoMercadoLivre(produtoId: string) {
 
 export async function updateProduto(id: string, data: any) {
   try {
+    await requireStaff();
     const produtoData = {
       ...parseDateFields(data, ['dataInicioPromocao', 'dataFimPromocao']),
       referenciaCruzada: data.referenciaCruzada ? JSON.stringify(data.referenciaCruzada) : null,

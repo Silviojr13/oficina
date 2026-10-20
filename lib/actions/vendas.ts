@@ -3,10 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import prisma from '../prisma';
 import { parseDateFields } from '../prisma-helpers';
-import { requireAdmin } from '../auth-guard';
+import { requireAdmin, requireStaff } from '../auth-guard';
 
 export async function getSaidaEstoque(id: string) {
   try {
+    await requireStaff();
     const venda = await prisma.saidaEstoque.findUnique({
       where: { id },
       include: {
@@ -36,14 +37,15 @@ export async function getSaidaEstoque(id: string) {
 
 export async function getSaidasEstoque(page: number = 1, limit: number = 10, search?: string) {
   try {
+    await requireStaff();
     const skip = (page - 1) * limit;
 
     let whereClause: any = {};
     if (search) {
       // Search by client name or numberPedido
       whereClause.OR = [
-        { cliente: { contains: search, mode: 'insensitive' } },
-        { numeroPedido: { contains: search, mode: 'insensitive' } },
+        { cliente: { contains: search } },
+        { numeroPedido: { contains: search } },
       ];
     }
 
@@ -98,6 +100,7 @@ async function proximoNumeroPedido() {
 
 export async function createSaidaEstoque(data: any) {
   try {
+    await requireStaff();
     const numeroPedido = data.numeroPedido || (await proximoNumeroPedido());
     const vendaData = {
       ...parseDateFields(data, ['dataHora']),
@@ -153,6 +156,7 @@ export async function createSaidaEstoque(data: any) {
 
 export async function updateSaidaEstoque(id: string, data: any) {
   try {
+    await requireStaff();
     const vendaAnterior = await prisma.saidaEstoque.findUnique({
       where: { id },
       include: { itens: true },
