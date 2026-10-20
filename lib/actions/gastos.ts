@@ -32,7 +32,6 @@ export async function getGastos(page: number = 1, limit: number = 10, search?: s
     if (search) {
       whereClause.descricao = {
         contains: search,
-        mode: 'insensitive',
       };
     }
 
